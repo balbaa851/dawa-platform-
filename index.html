@@ -129,7 +129,6 @@ textarea{resize:vertical;min-height:76px}
     <header class="top">
       <div class="logo"><i>☪</i></div>
       <div class="date" id="date"></div>
-      <a class="iconbtn" href="#explore" aria-label="Search"><svg class="ic" viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM21 21l-4.3-4.3"/></svg></a>
       <button class="iconbtn" id="langBtn" type="button"></button>
       <button class="iconbtn" id="themeBtn" type="button"></button>
     </header>
@@ -149,12 +148,12 @@ const IC={home:"M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",compa
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 
 /* ---------- i18n ---------- */
-const T={en:{appName:"Dawa Platform",home:"Home",explore:"Explore",quran:"Quran",qaris:"Qaris",hadith:"Hadith",prayer:"Prayer times",adhkar:"Adhkar",messages:"Messages",library:"Library",events:"Events",leaderboard:"Leaderboard",saved:"Saved",more:"More",
+const T={en:{appName:"Dawa Platform",home:"Home",explore:"Explore",quran:"Quran",qaris:"Qaris",hadith:"Hadith",prayer:"Prayer times",adhkar:"Adhkar",messages:"Messages",library:"Library",events:"Events",leaderboard:"Leaderboard",saved:"Saved",more:"Menu",
  homeSub:"A calm place to share what benefits.",compose:"Share something beneficial…",post:"Post",join:"Continue",yourName:"Choose a display name to start posting",
  exploreSub:"Search posts, surahs, hadith and reciters.",search:"Search…",quranSub:"Read, test your memory, and learn the meaning.",qarisSub:"A directory of well-known reciters.",hadithSub:"Short, widely cited narrations with their sources.",
  prayerSub:"Calculated on your device. No location is shared.",adhkarSub:"Tap to count. Finish the set to extend your streak.",messagesSub:"A demo conversation stored on this device.",
  librarySub:"Articles, books and courses.",eventsSub:"Lectures, circles and meetups.",boardSub:"Karma from helpful posts and daily adhkar.",savedSub:"Posts you bookmarked.",moreSub:"Everything on the platform."},
-ar:{appName:"منصة دعوة",home:"الرئيسية",explore:"استكشف",quran:"القرآن",qaris:"القرّاء",hadith:"الحديث",prayer:"مواقيت الصلاة",adhkar:"الأذكار",messages:"الرسائل",library:"المكتبة",events:"الفعاليات",leaderboard:"المتصدرون",saved:"المحفوظات",more:"المزيد",
+ar:{appName:"منصة دعوة",home:"الرئيسية",explore:"استكشف",quran:"القرآن",qaris:"القرّاء",hadith:"الحديث",prayer:"مواقيت الصلاة",adhkar:"الأذكار",messages:"الرسائل",library:"المكتبة",events:"الفعاليات",leaderboard:"المتصدرون",saved:"المحفوظات",more:"القائمة",
  homeSub:"مكان هادئ لمشاركة ما ينفع.",compose:"شارك ما ينفع…",post:"نشر",join:"متابعة",yourName:"اختر اسمًا للعرض لتبدأ النشر",
  exploreSub:"ابحث في المنشورات والسور والأحاديث والقرّاء.",search:"ابحث…",quranSub:"اقرأ، واختبر حفظك، وتعلّم المعنى.",qarisSub:"دليل لأشهر القرّاء.",hadithSub:"أحاديث قصيرة مشهورة مع مصادرها.",
  prayerSub:"تُحسب على جهازك دون مشاركة موقعك.",adhkarSub:"اضغط للعدّ. أكمل الورد لتزيد سلسلتك.",messagesSub:"محادثة تجريبية محفوظة على هذا الجهاز.",
@@ -226,8 +225,8 @@ function applyChrome(){
     const h=new Intl.DateTimeFormat(S.lang==="ar"?"ar-u-ca-islamic-umalqura":"en-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(new Date());
     $("#date").innerHTML=`<b>${esc(h)}</b> · ${esc(f(S.lang==="ar"?"ar":"en-GB").format(new Date()))}`}catch(e){$("#date").textContent=new Date().toDateString()}
 }
-const NAV=[["home","home"],["explore","compass"],["quran","book"],["qaris","music"],["hadith","scroll"],["prayer","clock"],["adhkar","spark"],["messages","chat"],["library","lib"],["events","cal"],["leaderboard","cup"],["saved","mark"]];
-const TABS=[["home","home"],["explore","compass"],["quran","book"],["prayer","clock"],["more","grid"]];
+const NAV=[["quran","book"],["qaris","music"],["hadith","scroll"],["prayer","clock"],["adhkar","spark"],["messages","chat"],["library","lib"],["events","cal"],["leaderboard","cup"],["saved","mark"]];
+const TABS=[["more","grid"],["quran","book"],["prayer","clock"]];
 function buildNav(cur){
   $("#nav").innerHTML=NAV.map(([r,i])=>`<a href="#${r}" ${r===cur?'aria-current="page"':""}>${ic(i)}<span>${esc(t(r))}</span></a>`).join("");
   $("#tabs").innerHTML=TABS.map(([r,i])=>`<a href="#${r}" ${r===cur||(r==="more"&&!TABS.some(x=>x[0]===cur))?'aria-current="page"':""}>${ic(i)}<span>${esc(t(r))}</span></a>`).join("");
@@ -278,22 +277,42 @@ function searchResults(q){
   out.push(...posts.map(postHTML));
   return out.length?out.join(""):`<div class="card flat muted">${esc(L("No results.","لا نتائج."))}</div>`}
 
+const LOAD={};
+function loadSurah(n){
+  if(TEXT[n]||LOAD[n]==="loading")return;
+  const c=store.get("q"+n,null);if(c){TEXT[n]=c;return}
+  LOAD[n]="loading";
+  fetch("https://api.alquran.cloud/v1/surah/"+n+"/editions/quran-uthmani,en.sahih").then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+    const ar=j.data[0].ayahs.map(a=>a.text),en=j.data[1].ayahs.map(a=>a.text);
+    const norm=x=>x.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g,"").replace(/\u0671/g,"\u0627");
+    if(n!==1&&n!==9&&norm(ar[0]).indexOf("\u0628\u0633\u0645 \u0627\u0644\u0644\u0647 \u0627\u0644\u0631\u062D\u0645\u0646 \u0627\u0644\u0631\u062D\u064A\u0645")===0){const w=ar[0].split(" ");if(w.length>4)ar[0]=w.slice(4).join(" ")}
+    TEXT[n]={ar:ar,en:en,live:true};store.set("q"+n,TEXT[n]);LOAD[n]="ok";
+  }).catch(()=>{LOAD[n]="err"}).then(()=>{if(S.surah===n&&(location.hash.slice(1)||"more")==="quran")render()});
+}
+const RECS=[["ar.alafasy","Mishary Alafasy","مشاري العفاسي"],["ar.abdulbasitmurattal","Abdul Basit Abdus Samad","عبد الباسط عبد الصمد"],["shuraim","Saud Ash-Shuraim","سعود الشريم"]];
+function audioHTML(n){
+  const r=S.reciter||"ar.alafasy";
+  const sel=`<select id="reciter" aria-label="Reciter" style="width:100%">${RECS.map(x=>`<option value="${x[0]}" ${x[0]===r?"selected":""}>${esc(S.lang==="ar"?x[2]:x[1])}</option>`).join("")}</select>`;
+  const url=r==="shuraim"?"https://surahquran.com/English/Al-Shuraim/"+n+".html":"https://cdn.islamic.network/quran/audio-surah/128/"+r+"/"+n+".mp3";
+  const player=r==="shuraim"?`<a class="btn" style="text-align:center" href="${url}" target="_blank" rel="noopener">${esc(L("Listen to this surah ↗","استمع إلى هذه السورة ↗"))}</a>`:`<audio controls preload="none" src="${url}" style="width:100%"></audio><a class="muted sm" href="${url}" target="_blank" rel="noopener">${esc(L("Not playing? Open the audio ↗","لا يعمل؟ افتح الصوت ↗"))}</a>`;
+  return `<div class="card flat" style="display:grid;gap:10px"><b>${esc(L("Listen","استماع"))}</b>${sel}${player}</div>`;
+}
 V.quran=()=>{
   const n=S.surah;
-  if(!n)return head(t("quran"),t("quranSub"))+`<div class="notice">${esc(L("Full text is included for four surahs (al-Fatihah, al-Ikhlas, al-Falaq, an-Nas). The other 110 appear in the list, and the full Quran loads from the live API in the complete build.","النص الكامل متاح لأربع سور (الفاتحة والإخلاص والفلق والناس). تظهر بقية السور في القائمة، ويُحمَّل المصحف كاملًا من الواجهة المباشرة في النسخة الكاملة."))}</div><div class="grid2">${AR.map((a,i)=>`<button class="card item" data-act="surah" data-n="${i+1}"><span><span class="num">${i+1}</span>${esc(EN[i])}</span><span class="ar" style="font-size:20px;line-height:1.4">${esc(a)}</span></button>`).join("")}</div>`;
-  const d=TEXT[n];
+  if(!n)return head(t("quran"),t("quranSub"))+`<div class="notice">${esc(L("All 114 surahs are here. The text loads online when you open a surah, then it is saved on this device.","السور الـ114 كلها متاحة. يُحمَّل النص من الإنترنت عند فتح السورة ثم يُحفظ على جهازك."))}</div><div class="grid2">${AR.map((a,i)=>`<button class="card item" data-act="surah" data-n="${i+1}"><span><span class="num">${i+1}</span>${esc(EN[i])}</span><span class="ar" style="font-size:20px;line-height:1.4">${esc(a)}</span></button>`).join("")}</div>`;
+  loadSurah(n);const d=TEXT[n];
   let body;
-  if(!d)body=`<div class="card flat" style="display:grid;gap:10px"><span>${esc(L("The text of this surah is not built into this page yet.","نص هذه السورة غير مضمَّن في هذه الصفحة بعد."))}</span><a class="btn" style="text-align:center" href="https://quran.com/${n}" target="_blank" rel="noopener">${esc(L("Read this surah on Quran.com","اقرأ هذه السورة على Quran.com"))} ↗</a></div>`;
+  if(!d)body=`<div class="card flat" style="display:grid;gap:10px"><span>${esc(LOAD[n]==="err"?L("Could not load the text. Check your internet connection.","تعذر تحميل النص. تحقق من اتصالك بالإنترنت."):L("Loading the surah…","جارٍ تحميل السورة…"))}</span><a class="btn" style="text-align:center" href="https://quran.com/${n}" target="_blank" rel="noopener">${esc(L("Read this surah on Quran.com","اقرأ هذه السورة على Quran.com"))} ↗</a></div>`;
   else body=d.ar.map((a,i)=>{
     let html;
     if(S.hifz){html=a.split(" ").map((w,j)=>((j+i)%3===1&&!S.revealed[`h${n}-${i}-${j}`])?`<button class="blank" data-act="reveal" data-k="h${n}-${i}-${j}" aria-label="Hidden word">${"ـ".repeat(Math.max(2,Math.min(w.length,6)))}</button>`:esc(w)).join(" ")}
     else html=esc(a);
     return `<div class="card"><div class="ar ayah">${html} <span class="muted" style="font-size:18px">﴿${i+1}﴾</span></div>${S.hifz?"":`<p class="muted" style="margin:6px 0 0" dir="ltr">${esc(d.en[i])}</p>`}</div>`}).join("");
   return `<button class="chip" data-act="back" style="align-self:flex-start">← ${esc(t("quran"))}</button><div class="ph"><h1 class="ar" style="font-size:38px;color:var(--gold-ink);text-align:center">${esc(AR[n-1])}</h1><p style="text-align:center">${esc(EN[n-1])}</p></div>
-   ${d?`<div class="row"><button class="chip" data-act="hifz" aria-pressed="${S.hifz}">${esc(L("Hifz test: hide words","اختبار الحفظ: إخفاء كلمات"))}</button>${S.hifz?`<button class="chip" data-act="hifzreset">${esc(L("Reset","إعادة"))}</button>`:""}</div>`:""}${body}${d?`<p class="muted sm">${esc(L("English lines are short paraphrases of the meaning, not an official translation.","المعاني المعروضة تفسير مختصر وليست ترجمة معتمدة."))}</p>`:""}`};
+   ${audioHTML(n)}${d?`<div class="row"><button class="chip" data-act="hifz" aria-pressed="${S.hifz}">${esc(L("Hifz test: hide words","اختبار الحفظ: إخفاء كلمات"))}</button>${S.hifz?`<button class="chip" data-act="hifzreset">${esc(L("Reset","إعادة"))}</button>`:""}</div>`:""}${body}${d?`<p class="muted sm">${esc(d.live?L("English: Saheeh International translation, loaded from alquran.cloud.","الإنجليزية: ترجمة صحيح إنترناشيونال من alquran.cloud."):L("English lines are short paraphrases of the meaning, not an official translation.","المعاني المعروضة تفسير مختصر وليست ترجمة معتمدة."))}</p>`:""}`};
 
 V.qaris=()=>{const f=S.qf||"all";const l=QARIS.filter(x=>f==="all"||x[2]===f||x[2]==="both");
-  return head(t("qaris"),t("qarisSub"))+`<div class="notice">${esc(L("Directory preview: 20 reciters shown. Audio streaming, the full list of 100 reciters and 0.75x–2x speed control run in the complete build with the backend.","معاينة للدليل: 20 قارئًا. البث الصوتي والقائمة الكاملة (100 قارئ) وضبط السرعة من 0.75 إلى 2 تعمل في النسخة الكاملة مع الخادم."))}</div>
+  return head(t("qaris"),t("qarisSub"))+`<div class="notice">${esc(L("Directory of 20 reciters. To listen, open any surah on the Quran page and choose Mishary Alafasy, Abdul Basit or Saud Ash-Shuraim.","دليل لـ20 قارئًا. للاستماع افتح أي سورة في صفحة القرآن واختر مشاري العفاسي أو عبد الباسط أو سعود الشريم."))}</div>
   <div class="row">${[["all",L("All","الكل")],["murattal",L("Murattal","مرتّل")],["mujawwad",L("Mujawwad","مجوّد")]].map(([k,v])=>`<button class="chip" data-act="qf" data-s="${k}" aria-pressed="${f===k}">${esc(v)}</button>`).join("")}</div>
   <div class="grid2">${l.map(x=>`<div class="card"><b>${esc(x[0])}</b><div class="ar" style="font-size:20px;line-height:1.6">${esc(x[1])}</div><span class="tag">${x[2]==="both"?"Murattal · Mujawwad":x[2]}</span></div>`).join("")}</div>`};
 
@@ -304,12 +323,63 @@ V.prayer=()=>{
   return head(t("prayer"),t("prayerSub"))+`<div class="row"><select id="city" aria-label="City" style="width:auto;flex:1">${Object.keys(CITIES).map(k=>`<option ${k===S.city?"selected":""}>${esc(k)}</option>`).join("")}</select><select id="method" aria-label="Method" style="width:auto;flex:1">${Object.entries(METHODS).map(([k,v])=>`<option value="${k}" ${k===S.method?"selected":""}>${esc(v.n)}</option>`).join("")}</select></div>
   <div class="card flat row sb"><span class="muted">${esc(L("Next prayer","الصلاة القادمة"))}: <b id="nextName" style="color:var(--fg)"></b></span><b id="countdown" style="font-size:24px;font-variant-numeric:tabular-nums"></b></div>
   <div class="times" id="times"></div>
-  <div class="card" style="text-align:center"><h2 style="font-size:18px;margin-bottom:10px">${esc(L("Qibla direction","اتجاه القبلة"))}</h2>
+  <div class="card" id="qcard" style="text-align:center"><h2 style="font-size:18px;margin-bottom:10px">${esc(L("Qibla direction","اتجاه القبلة"))}</h2>
    <svg class="compass" viewBox="0 0 200 200" role="img" aria-label="Qibla compass"><circle cx="100" cy="100" r="92" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="3"/>
-    ${[["N",100,22],["E",178,105],["S",100,186],["W",22,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}
-    <g transform="rotate(${qibla(c[0],c[1]).toFixed(1)} 100 100)"><path d="M100 36 L110 100 L90 100 Z" fill="var(--gold)"/><path d="M100 164 L108 100 L92 100 Z" fill="var(--line)"/></g><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
-   <p class="muted sm" style="margin:8px 0 0">${qibla(c[0],c[1]).toFixed(1)}° ${esc(L("clockwise from true north, from "+S.city,"باتجاه عقارب الساعة من الشمال الحقيقي، من "+S.city))}</p></div>
+    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}
+     <g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 3"/><text x="100" y="36" text-anchor="middle" font-size="20">🕋</text></g></g>
+    <path d="M100 4 L109 20 L91 20 Z" fill="var(--primary-strong)"/><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
+   <p class="muted sm" id="qinfo" style="margin:8px 0"></p>
+   <button class="btn" data-act="qstart">${esc(L("Start live compass","تشغيل البوصلة المباشرة"))}</button>
+   <p class="muted sm" id="qmsg" style="margin:8px 0 0">${esc(L("Hold your phone flat. Allow location and motion when asked.","أمسك الهاتف أفقيًا واسمح بالموقع والحركة عند الطلب."))}</p></div>
   <p class="muted sm">${esc(L("Times are calculated with the "+M.n+" method (Asr: standard). They can differ by a few minutes from your local mosque, so follow the official timetable where you live.","الأوقات محسوبة بطريقة «"+M.n+"» (العصر: المذهب الجمهور). قد تختلف دقائق عن مسجدك، فاتبع الجدول الرسمي في بلدك."))}</p>`};
+const LQ={h:null,pos:null,on:false,got:false,al:false,to:0,wid:null};
+const qEvt=()=>("ondeviceorientationabsolute" in window)?"deviceorientationabsolute":"deviceorientation";
+function qBearing(){const c=CITIES[S.city]||CITIES.Cairo;return LQ.pos?qibla(LQ.pos[0],LQ.pos[1]):qibla(c[0],c[1])}
+function qdraw(){
+  const d=$("#qdial");if(!d)return;
+  const b=qBearing(),h=LQ.h,k=$("#qk"),info=$("#qinfo"),card=$("#qcard");
+  k.setAttribute("transform","rotate("+b.toFixed(1)+" 100 100)");
+  d.setAttribute("transform","rotate("+(h==null?0:-h).toFixed(1)+" 100 100)");
+  const src=LQ.pos?L("your location","موقعك"):S.city;
+  if(h==null){info.textContent=b.toFixed(1)+"° "+L("clockwise from north, using ","باتجاه عقارب الساعة من الشمال، حسب ")+src;card.style.outline="";return}
+  const diff=((b-h+540)%360)-180,ok=Math.abs(diff)<=3;
+  info.innerHTML=ok?"<b style=\"color:var(--primary)\">✓ "+esc(L("You are facing the Qibla","أنت تواجه القبلة"))+"</b>":esc(L("Turn ","أدِر "))+Math.abs(diff).toFixed(0)+"° "+esc(diff>0?L("right","يمينًا"):L("left","يسارًا"))+" · "+esc(L("Qibla ","القبلة "))+b.toFixed(0)+"°";
+  card.style.outline=ok?"2px solid var(--primary)":"";
+  if(ok&&!LQ.al&&navigator.vibrate)navigator.vibrate(60);
+  LQ.al=ok;
+}
+function qori(e){
+  let h=null;
+  if(e.webkitCompassHeading!=null)h=e.webkitCompassHeading;
+  else if(e.absolute===true&&e.alpha!=null){
+    const a=rad(e.alpha),bt=rad(e.beta||0),g=rad(e.gamma||0);
+    if(Math.abs(e.beta||0)<50)h=360-e.alpha;
+    else h=deg(Math.atan2(-(Math.sin(g)*Math.cos(a)+Math.cos(g)*Math.sin(bt)*Math.sin(a)),-(Math.sin(g)*Math.sin(a)-Math.cos(g)*Math.sin(bt)*Math.cos(a))));
+  }
+  if(h==null||isNaN(h))return;
+  h=(h+((screen.orientation&&screen.orientation.angle)||0)+720)%360;
+  LQ.got=true;LQ.h=LQ.h==null?h:(LQ.h+(((h-LQ.h+540)%360)-180)*0.3+360)%360;
+  qdraw();
+}
+function stopQibla(){
+  window.removeEventListener("deviceorientationabsolute",qori,true);window.removeEventListener("deviceorientation",qori,true);
+  if(LQ.wid!=null&&navigator.geolocation)navigator.geolocation.clearWatch(LQ.wid);
+  clearTimeout(LQ.to);LQ.on=false;LQ.h=null;LQ.wid=null;LQ.al=false;
+}
+function startQibla(){
+  const m=$("#qmsg"),btn=$('[data-act="qstart"]');
+  if(LQ.on){stopQibla();if(btn)btn.textContent=L("Start live compass","تشغيل البوصلة المباشرة");qdraw();return}
+  const go=()=>{
+    LQ.on=true;LQ.got=false;window.addEventListener(qEvt(),qori,true);
+    if(btn)btn.textContent=L("Stop live compass","إيقاف البوصلة");
+    if(m)m.textContent=L("Live. Hold the phone flat and turn until the Kaaba reaches the top arrow.","مباشر. أمسك الهاتف أفقيًا وأدِر حتى تصل الكعبة إلى السهم العلوي.");
+    LQ.to=setTimeout(()=>{if(!LQ.got&&m)m.textContent=L("No compass sensor found. Open this page on a phone over HTTPS and allow motion access.","لم يُعثر على حساس البوصلة. افتح الصفحة على هاتف عبر HTTPS واسمح بالحركة.")},2500);
+  };
+  if(navigator.geolocation)LQ.wid=navigator.geolocation.watchPosition(p=>{LQ.pos=[p.coords.latitude,p.coords.longitude];qdraw()},()=>{if(m&&!LQ.got)m.textContent=L("Location not allowed, so the selected city is used.","لم يُسمح بالموقع، لذلك تُستخدم المدينة المختارة.")},{maximumAge:60000,timeout:20000});
+  if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+    DeviceOrientationEvent.requestPermission().then(r=>{if(r==="granted")go();else if(m)m.textContent=L("Motion access was denied. Allow it in your browser settings.","تم رفض الوصول للحركة. اسمح به من إعدادات المتصفح.")}).catch(()=>{if(m)m.textContent=L("Could not start the compass. Open the site over HTTPS.","تعذر تشغيل البوصلة. افتح الموقع عبر HTTPS.")});
+  }else go();
+}
 let timer=null;
 function startPrayer(){
   const c=CITIES[S.city]||CITIES.Cairo,M=METHODS[S.method]||METHODS.egypt,tz=c[2];
@@ -346,11 +416,11 @@ V.leaderboard=()=>{const me=S.posts.length*5+S.streak.n*10+Object.keys(S.react).
 
 /* ---------- router ---------- */
 function render(){
-  const r=(location.hash.slice(1)||"home");const route=V[r]?r:"home";
-  clearInterval(timer);
+  const r=(location.hash.slice(1)||"more");const route=V[r]&&r!=="home"&&r!=="explore"?r:"more";
+  clearInterval(timer);stopQibla();
   buildNav(route);
   $("#main").innerHTML=V[route]();
-  if(route==="prayer")startPrayer();
+  if(route==="prayer"){startPrayer();qdraw()}
   if(route==="explore")$("#results").innerHTML=searchResults(S.q||"");
   if(route==="messages"){const th=$("#thread");if(th)th.scrollTop=th.scrollHeight}
   window.scrollTo(0,0);
@@ -359,6 +429,7 @@ window.addEventListener("hashchange",render);
 
 /* ---------- events ---------- */
 const main=$("#main");
+main.addEventListener("change",e=>{if(e.target.id==="reciter"){S.reciter=e.target.value;save();const y=window.scrollY;render();window.scrollTo(0,y)}});
 main.addEventListener("click",e=>{
   const b=e.target.closest("[data-act]");if(!b)return;
   const act=b.dataset.act,card=b.closest("[data-id]"),id=card&&card.dataset.id,keep=()=>{const y=window.scrollY;render();window.scrollTo(0,y)};
@@ -377,6 +448,7 @@ main.addEventListener("click",e=>{
   else if(act==="hifz"){S.hifz=!S.hifz;keep()}
   else if(act==="hifzreset"){for(const k in S.revealed)if(k[0]==="h")delete S.revealed[k];save();keep()}
   else if(act==="reveal"){S.revealed[b.dataset.k]=true;save();keep()}
+  else if(act==="qstart"){startQibla()}
   else if(act==="qf"){S.qf=b.dataset.s;keep()}
   else if(act==="dhikr"){const i=+b.dataset.i,n=ADHKAR[i].n;S.adhkar.done[i]=Math.min((S.adhkar.done[i]||0)+1,n);
     if(ADHKAR.every((a,k)=>(S.adhkar.done[k]||0)>=a.n)&&S.streak.last!==dayKey()){const y=new Date(Date.now()-864e5).toDateString();S.streak={n:S.streak.last===y?S.streak.n+1:1,last:dayKey()}}
@@ -393,7 +465,6 @@ main.addEventListener("change",e=>{if(e.target.id==="city"){S.city=e.target.valu
 main.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="msg"){e.preventDefault();main.querySelector('[data-act="msg"]').click()}if(e.key==="Enter"&&e.target.id==="uname"){main.querySelector('[data-act="join"]').click()}});
 $("#langBtn").addEventListener("click",()=>{S.lang=S.lang==="ar"?"en":"ar";save();applyChrome();render()});
 $("#themeBtn").addEventListener("click",()=>{const o=["auto","light","dark","emerald"];S.theme=o[(o.indexOf(S.theme)+1)%o.length];save();applyChrome()});
-document.addEventListener("keydown",e=>{if(e.key==="/"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();if(location.hash!=="#explore")location.hash="explore";setTimeout(()=>{const q=$("#q");if(q)q.focus()},30)}});
 
 if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(()=>({}))}catch(e){}}
 applyChrome();render();
