@@ -533,7 +533,7 @@ function render(){
   if(route==="prayer"){startPrayer();qdraw()}
   if(route==="qaris"&&$("#qlist"))mujUpdate();
   if(route==="explore")$("#results").innerHTML=searchResults(S.q||"");
-  window.scrollTo(0,0);
+  window.scrollTo(0,0);try{postRender(route)}catch(e){console.error(e)}
 }
 window.addEventListener("hashchange",render);
 
@@ -1157,6 +1157,228 @@ if(e.target.id==="fb-s"){const m=$("#fb-m").value.trim();if(!m){$("#fb-e").hidde
 const txt=`*${k}* — منصة دعوة\n${n?"الاسم: "+n+"\n":""}\n${m}`;window.open("https://wa.me/"+WA+"?text="+encodeURIComponent(txt),"_blank","noopener");fbClose()}});
 setTimeout(()=>$("#fb-m").focus(),50)}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")fbClose()});
+/* ===== BATCH 3: Recent + Favourites + Top-50 Egyptian reciters ===== */
+const b3css=document.createElement("style");b3css.textContent=`
+.fv{border:0;background:transparent;color:var(--gold-ink);font-size:22px;line-height:1;cursor:pointer;padding:6px 8px;border-radius:999px;flex:none}
+.fv[aria-pressed="true"]{color:var(--gold)}.fv:hover{background:var(--tint)}
+.fv.abs{position:absolute;top:6px;inset-inline-end:6px}.fvrel{position:relative}
+.fvw{display:flex;gap:6px;align-items:stretch}.fvw>.card{flex:1;min-width:0;width:auto!important}.fvw>.fv{align-self:center}
+.fvbar{display:flex;justify-content:flex-end;margin-top:4px}.fvh{align-self:stretch}
+.fvsum{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.fvrow{padding:8px 10px}.fvgo{border:0;background:transparent;text-align:start;display:grid;gap:2px;cursor:pointer;padding:4px}
+.fvh2{font-size:17px;margin:14px 0 4px}
+.hbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hbtn{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;padding:14px 6px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--fg);font-weight:700}
+.hbtn.gold{background:var(--gold);color:#1A1500;border-color:transparent}.hbtn small{opacity:.8;font-weight:600}
+.hcont{display:grid;gap:2px;text-align:start;cursor:pointer;width:100%;border-color:var(--primary)}
+.fvsec{display:grid;gap:6px}
+.fvflash{animation:fvf 2.4s}@keyframes fvf{0%,60%{outline:3px solid var(--gold);outline-offset:2px}100%{outline:3px solid transparent}}
+`;document.head.appendChild(b3css);
+
+const FG=[["quran","القرآن","📖"],["tafsir","التفسير","📚"],["hadith","الحديث","📜"],["qari","القرّاء","🎙"],["adhkar","الأذكار","📿"],["page","الصفحات والأقسام","📄"]];
+const fgl=k=>FG.find(g=>g[0]===k)||FG[5];
+const T3={favs:["Favourites","المفضلة"],recent:["Recent","آخر ما تصفحت"],egy:["Top 50 Egyptian reciters","أفضل 50 قارئ مصري"],sheikh:["Reciter","القارئ"]};
+for(const k in T3){T.en[k]=T3[k][0];T.ar[k]=T3[k][1]}
+NAV.unshift(["favs","star"],["recent","clock"]);TABS.splice(1,0,["favs","star"]);
+
+/* --- state helpers --- */
+const FV={f:null},EG={cur:0,gen:0,q:""};
+const fvL=()=>XS.g("fav",[]),rcL=()=>XS.g("rec",[]);
+const isFav=it=>fvL().some(x=>x.t===it.t&&x.k===it.k);
+const curRoute=()=>{const r=location.hash.slice(1)||"more";return V[r]&&r!=="home"&&r!=="explore"?r:"more"};
+const go=h=>{if((location.hash.slice(1)||"more")===h)render();else location.hash=h};
+const surahItem=(n,a)=>({t:"quran",k:"s"+n,ti:"سورة "+AR[n-1],sb:a?"آية "+a:EN[n-1],st:{h:"quran",surah:n,ayah:a||0}});
+const pgItem=r=>({t:"page",k:r,ti:t(r),sb:"",st:{h:r}});
+const egItem=i=>({t:"qari",k:"e"+i,ti:EGY[i].n,sb:"قارئ مصري",st:{h:"sheikh",e:i}});
+function qariCur(){if(S.qid!=null){const R=MQ.list&&MQ.list.find(r=>r.id===S.qid);return{t:"qari",k:"id"+S.qid,ti:R?R.name:"قارئ",sb:"تلاوة مجوّدة",st:{h:"qari",qid:S.qid}}}
+ const i=S.qari!=null&&QARIS[S.qari]?S.qari:0;return{t:"qari",k:"q"+i,ti:QARIS[i][1],sb:QARIS[i][0],st:{h:"qari",qari:i}}}
+function curItem(){const r=curRoute();
+ if(r==="quran")return S.surah?surahItem(S.surah):pgItem(r);
+ if(r==="qari")return qariCur();
+ if(r==="sheikh")return egItem(EG.cur);
+ if(r==="tafsir")return{t:"tafsir",k:"t"+X.sur,ti:"تفسير سورة "+AR[X.sur-1],sb:TF[X.tf][1],st:{h:"tafsir",sur:X.sur,tf:X.tf}};
+ if(r==="books")return{t:"hadith",k:"bk:"+X.book.b,ti:BK[X.book.b][1],sb:"كتب الحديث",st:{h:"books",b:X.book.b,p:X.book.p,q:X.book.q}};
+ if(r==="plan")return{t:"page",k:"plan"+S.plan,ti:LIB[S.plan||0][0],sb:t("library"),st:{h:"library",plan:S.plan||0}};
+ if(r==="more"||r==="favs"||r==="recent")return null;
+ return pgItem(r)}
+const since=ts=>{const m=Math.floor((Date.now()-ts)/6e4),h=Math.floor(m/60),d=Math.floor(m/1440);return m<1?L("now","الآن"):m<60?L(m+"m ago","منذ "+m+" د"):m<1440?L(h+"h ago","منذ "+h+" س"):L(d+"d ago","منذ "+d+" يوم")};
+
+/* --- favourites --- */
+const favBtn=(it,c)=>{const on=isFav(it);return `<button type="button" class="fv ${c||""}" data-fv="${esc(JSON.stringify(it))}" aria-label="${esc(L("Favourite","مفضلة"))}" aria-pressed="${on}">${on?"★":"☆"}</button>`};
+function toggleFav(it){const f=fvL(),i=f.findIndex(x=>x.t===it.t&&x.k===it.k);if(i>=0)f.splice(i,1);else f.unshift(Object.assign({},it,{ts:Date.now()}));XS.s("fav",f);
+ if(it.t==="tafsir"&&it.st.ayah){const v=it.st.sur+":"+it.st.ayah;let m=XS.g("bm",[]);m=i>=0?m.filter(x=>x!==v):m.includes(v)?m:m.concat(v);XS.s("bm",m)}
+ syncStars()}
+function topStar(){const b=$("#favTop");if(!b)return;const it=curItem();b.hidden=!it;if(it){b.dataset.fv=JSON.stringify(it);const on=isFav(it);b.textContent=on?"★":"☆";b.setAttribute("aria-pressed",on)}}
+function syncStars(){document.querySelectorAll(".fv").forEach(b=>{if(b.id==="favTop")return;try{const on=isFav(JSON.parse(b.dataset.fv));b.setAttribute("aria-pressed",on);b.textContent=on?"★":"☆"}catch(e){}});topStar()}
+const ft=document.createElement("button");ft.id="favTop";ft.type="button";ft.className="iconbtn fv fvtop";ft.setAttribute("aria-label","مفضلة");ft.hidden=true;document.querySelector(".gear").before(ft);
+/* bring old tafsir bookmarks into favourites once */
+XS.g("bm",[]).forEach(v=>{const[s,a]=v.split(":").map(Number);if(s&&a&&!isFav({t:"tafsir",k:"a"+s+":"+a})){const f=fvL();f.push({t:"tafsir",k:"a"+s+":"+a,ti:"آية "+a+" — سورة "+AR[s-1],sb:"تفسير",st:{h:"tafsir",sur:s,ayah:a},ts:Date.now()});XS.s("fav",f)}});
+
+/* --- recent --- */
+function rec(it){if(!it)return;const l=rcL(),i=l.findIndex(x=>x.t===it.t&&x.k===it.k),o=l[i];
+ if(o&&((it.t==="quran"&&o.st.ayah&&!it.st.ayah)||(it.t==="qari"&&o.st.surah&&it.st.surah==null)))it=Object.assign({},it,{sb:o.sb,st:o.st});
+ if(o&&i===0&&o.sb===it.sb&&o.ti===it.ti&&JSON.stringify(o.st)===JSON.stringify(it.st))return;
+ if(i>=0)l.splice(i,1);l.unshift(Object.assign({},it,{ts:Date.now()}));l.length=Math.min(l.length,60);XS.s("rec",l)}
+
+/* --- navigate to a saved/recent item --- */
+function goItem(it){const s=it.st||{},f=o=>{FV.f=Object.assign({ts:Date.now()},o)};
+ switch(s.h){
+ case"quran":S.surah=s.surah;S.hifz=false;save();if(s.ayah)f({r:"quran",ay:s.ayah});go("quran");break;
+ case"tafsir":X.sur=s.sur;if(s.tf)X.tf=s.tf;if(s.ayah)f({r:"tafsir",ay:s.ayah});go("tafsir");break;
+ case"hadith":f({r:"hadith",hi:s.i});go("hadith");break;
+ case"books":X.book.b=s.b;X.book.p=s.p||1;X.book.q=s.q||"";if(s.n)f({r:"books",hn:s.n});go("books");break;
+ case"qari":if(s.qid!=null){S.qid=s.qid;QS.i=-1}else{S.qari=s.qari;S.qid=null}if(s.surah)f({r:"qari",row:s.surah});save();go("qari");break;
+ case"reciters2":X.rec.q=s.q||"";X.rec.kind="";X.rec.eg=false;X.rec.rw="";go("reciters2");break;
+ case"sheikh":EG.cur=s.e;go("sheikh");break;
+ case"adhkar":S.ac="all";f({r:"adhkar",d:s.i});save();go("adhkar");break;
+ case"library":if(s.plan!=null){S.plan=s.plan;go("plan")}else go("library");break;
+ default:go(s.h)}}
+function tryFocus(r){const f=FV.f;if(!f)return;if(Date.now()-f.ts>20000){FV.f=null;return}if(f.r!==r)return;
+ const q=f.ay!=null?`[data-ay="${f.ay}"]`:f.hi!=null?`[data-hi="${f.hi}"]`:f.hn!=null?`[data-hn="${f.hn}"]`:f.d!=null?`[data-act="dhikr"][data-i="${f.d}"]`:f.row!=null?`[data-row="${f.row}"]`:null;
+ const el=q&&$("#main "+q);if(el){FV.f=null;el.scrollIntoView({block:"center"});el.classList.add("fvflash");setTimeout(()=>el.classList.remove("fvflash"),2400)}}
+
+/* --- decorate existing pages with ☆ buttons (idempotent; re-runs after async content loads) --- */
+const wrapFv=(b,it)=>{if(b.parentNode.classList.contains("fvw"))return;const w=document.createElement("div");w.className="fvw";b.parentNode.insertBefore(w,b);w.appendChild(b);w.insertAdjacentHTML("beforeend",favBtn(it))};
+function dec(r){const m=$("#main");if(!m)return;
+ if(r==="quran"&&!S.surah)m.querySelectorAll('button[data-act="surah"]').forEach(b=>wrapFv(b,surahItem(+b.dataset.n)));
+ if(r==="quran"&&S.surah){m.querySelectorAll(".ar.ayah").forEach((el,i)=>{const c=el.closest(".card");if(c)c.dataset.ay=i+1});
+  const b=m.querySelector('[data-act="back"]');if(b&&!b.parentNode.classList.contains("fvh")){const w=document.createElement("div");w.className="row sb fvh";b.parentNode.insertBefore(w,b);w.appendChild(b);w.insertAdjacentHTML("beforeend",favBtn(surahItem(S.surah)))}}
+ if(r==="qaris")m.querySelectorAll('[data-act="qari"],[data-act="qid"],[data-act="eg"]').forEach(c=>{if(c.querySelector(".fv"))return;const a=c.dataset.act;let it;
+  if(a==="qari"){const i=+c.dataset.i;it={t:"qari",k:"q"+i,ti:QARIS[i][1],sb:QARIS[i][0],st:{h:"qari",qari:i}}}
+  else if(a==="qid")it={t:"qari",k:"id"+c.dataset.id,ti:c.querySelector("b").textContent,sb:"تلاوة مجوّدة",st:{h:"qari",qid:+c.dataset.id}};
+  else it=egItem(+c.dataset.e);c.classList.add("fvrel");c.insertAdjacentHTML("afterbegin",favBtn(it,"abs"))});
+ if(r==="hadith")m.querySelectorAll("article.card").forEach((c,i)=>{if(c.dataset.hi!=null||!HADITH[i])return;c.dataset.hi=i;c.insertAdjacentHTML("beforeend",`<div class="fvbar">${favBtn({t:"hadith",k:"h"+i,ti:HADITH[i].ar.slice(0,70),sb:HADITH[i].src,st:{h:"hadith",i}})}</div>`)});
+ if(r==="adhkar")m.querySelectorAll('button[data-act="dhikr"]').forEach(b=>{const i=+b.dataset.i;wrapFv(b,{t:"adhkar",k:"d"+i,ti:ADHKAR[i].ar.slice(0,70),sb:"",st:{h:"adhkar",i}})});
+ if(r==="books")m.querySelectorAll("#x-out .card").forEach(c=>{const g=c.querySelector(".tag");if(!g||c.dataset.hn)return;const n=parseInt(g.textContent.replace(/\D/g,""))||0,b=X.book;c.dataset.hn=n;
+  c.insertAdjacentHTML("beforeend",`<div class="fvbar">${favBtn({t:"hadith",k:"b:"+b.b+":"+n,ti:BK[b.b][1]+" — حديث "+n,sb:((c.querySelector("p")||{}).textContent||"").slice(0,70),st:{h:"books",b:b.b,p:b.p,q:b.q,n}})}</div>`)});
+ if(r==="tafsir")m.querySelectorAll('#x-out [data-x="bm"]').forEach(b=>{const c=b.closest(".card");if(c&&!c.dataset.ay)c.dataset.ay=b.dataset.v.split(":")[1]});
+ if(r==="reciters2"){const J=X.cache["https://www.mp3quran.net/api/v3/reciters?language=ar"];if(J)m.querySelectorAll("#x-out details.card>summary").forEach(s=>{if(s.querySelector(".fv"))return;const c=J.reciters.find(x=>x.name===s.querySelector("b").textContent);if(c){s.classList.add("fvsum");s.insertAdjacentHTML("beforeend",favBtn({t:"qari",k:"id"+c.id,ti:c.name,sb:"mp3quran",st:{h:"qari",qid:c.id}}))}})}}
+function postRender(r){topStar();const it=curItem();if(it&&r!=="more"&&r!=="favs"&&r!=="recent")rec(it);setTimeout(()=>{dec(r);tryFocus(r)},0)}
+let ob,tm0;const obStart=()=>{const m=$("#main");if(m)ob.observe(m,{childList:true,subtree:true})};
+ob=new MutationObserver(()=>{clearTimeout(tm0);tm0=setTimeout(()=>{ob.disconnect();try{const r=curRoute();dec(r);tryFocus(r);if(r==="books")rec(curItem())}catch(e){}obStart()},60)});obStart();
+
+/* --- remember reading position (quran) and last played --- */
+let st0=0;addEventListener("scroll",()=>{if(st0)return;st0=setTimeout(()=>{st0=0;if(curRoute()!=="quran"||!S.surah)return;for(const c of document.querySelectorAll("#main [data-ay]"))if(c.getBoundingClientRect().bottom>110){rec(surahItem(S.surah,+c.dataset.ay));break}},800)},{passive:true});
+document.addEventListener("play",e=>{const a=e.target;
+ if(a.id==="qa"){const it=qariCur();it.sb="آخر تشغيل: سورة "+(AR[QS.cur-1]||QS.cur);it.st.surah=QS.cur;rec(it)}
+ else if(a.id==="x-au"){const ti=($("#x-nt")||{}).textContent||"";rec({t:"qari",k:"play:"+ti,ti,sb:"تلاوة",st:{h:"reciters2",q:ti.split(" — ")[0]}})}
+ else if(a.id==="eg-au"){const it=egItem(EG.cur);it.sb=($("#eg-nt")||{}).textContent||"";rec(it)}},true);
+
+/* --- pages: favourites / recent (grouped by type) --- */
+const rowH=(it,s)=>`<div class="card row fvrow"><button type="button" class="fvgo grow" data-gs="${s}" data-gt="${esc(it.t)}" data-gk="${esc(it.k)}"><b>${esc(it.ti)}</b><span class="muted sm">${esc(it.sb||"")}${s==="r"&&it.ts?" · "+since(it.ts):""}</span></button>${favBtn(it)}</div>`;
+const groups=(l,s)=>FG.map(([k,n,ic])=>{const a=l.filter(x=>x.t===k);return a.length?`<h2 class="fvh2">${ic} ${esc(n)} <span class="muted sm">${a.length}</span></h2>`+a.map(x=>rowH(x,s)).join(""):""}).join("");
+V.favs=()=>{const l=fvL();return head(t("favs"),L("Quick access to everything you saved","وصول سريع لكل ما حفظته"))+(l.length?groups(l,"f")+`<button class="btn ghost sm" data-fx="f">${esc(L("Clear all","مسح الكل"))}</button>`:`<div class="card flat muted">${esc(L("Tap ☆ on anything to add it here. The ☆ in the top bar saves the current page.","اضغط ☆ على أي شيء لإضافته هنا. ونجمة الشريط العلوي تحفظ الصفحة الحالية."))}</div>`)};
+V.recent=()=>{const l=rcL();return head(t("recent"),L("Pick up where you left off","ارجع لآخر مكان كنت فيه"))+(l.length?groups(l,"r")+`<button class="btn ghost sm" data-fx="r">${esc(L("Clear history","مسح السجل"))}</button>`:`<div class="card flat muted">${esc(L("Nothing yet. Pages, surahs, hadith and reciters you open appear here.","لا شيء بعد. ما تفتحه من صفحات وسور وأحاديث وقرّاء سيظهر هنا."))}</div>`)};
+
+/* --- home: buttons + continue card + quick chips --- */
+const _mo=V.more;
+V.more=()=>{const h=_mo(),k=h.indexOf('<div class="more">'),f=fvL(),r=rcL(),c=r.find(x=>x.t!=="page")||r[0];
+ const ch=(l,s,n)=>l.slice(0,n).map(x=>`<button type="button" class="chip" data-gs="${s}" data-gt="${esc(x.t)}" data-gk="${esc(x.k)}">${fgl(x.t)[2]} ${esc(x.ti.slice(0,28))}</button>`).join("");
+ const top=`<div class="hbtns"><a class="hbtn gold" href="#favs">⭐ ${esc(t("favs"))}<small>${f.length}</small></a><a class="hbtn" href="#recent">🕘 ${esc(t("recent"))}<small>${r.length}</small></a></div>`
+ +(c?`<button type="button" class="card hcont" data-gs="r" data-gt="${esc(c.t)}" data-gk="${esc(c.k)}"><span class="muted sm">${esc(L("Continue where you left off","تابع من حيث توقفت"))} · ${since(c.ts)}</span><b>${fgl(c.t)[2]} ${esc(c.ti)}</b><span class="muted sm">${esc(c.sb||"")}</span></button>`:"")
+ +(f.length?`<div class="fvsec"><b>⭐ ${esc(t("favs"))}</b><div class="row">${ch(f,"f",8)}</div></div>`:"")
+ +(r.length?`<div class="fvsec"><b>🕘 ${esc(t("recent"))}</b><div class="row">${ch(r,"r",6)}</div></div>`:"");
+ return k<0?h+top:h.slice(0,k)+top+h.slice(k)};
+const _q3=V.qaris;
+V.qaris=()=>{const h=_q3(),k=h.indexOf('<div class="notice">'),b=`<a class="card row sb" href="#egy"><b>🇪🇬 ${esc(t("egy"))}</b><span>▸</span></a>`;return k<0?h:h.slice(0,k)+b+h.slice(k)};
+
+const _r2=V.reciters2;V.reciters2=()=>{const h=_r2(),k=h.indexOf('<input type="search" id="x-q"');return k<0?h:h.slice(0,k)+`<a class="card row sb" href="#egy"><b>🇪🇬 ${esc(t("egy"))}</b><span>▸</span></a>`+h.slice(k)};
+/* --- Top 50 Egyptian reciters: name|years|gen(1 founders,2 golden,3 contemporary)|flags(j mujawwad,r murattal)|bio|riwayat|API alias --- */
+const EGY=`عبد الباسط عبد الصمد|1927–1988|2|jr|صاحب النَفَس الطويل والصوت الأشهر عالميًا؛ سجّل المصحف مجوّدًا ومرتّلًا.|حفص,ورش|
+محمد صديق المنشاوي|1920–1969|2|jr|تلاوة خاشعة مؤثرة؛ سجّل المصحف مرتّلًا ومجوّدًا ورحل في عمر مبكر.|حفص|
+محمود خليل الحصري|1917–1980|2|r|أول من سجّل المصحف المرتّل كاملًا بحفص، وسجّل بورش وقالون والدوري عن أبي عمرو، ومرجع في التجويد.|حفص,ورش,قالون,الدوري عن أبي عمرو|
+مصطفى إسماعيل|1905–1978|1|j|مدرسة في المقامات والتطريب، من أشهر المجوّدين في العالم الإسلامي.|حفص|مصطفى اسماعيل
+محمد رفعت|1882–1950|1|j|«قيثارة السماء»، افتُتحت الإذاعة المصرية بصوته عام 1934.|حفص|
+محمود علي البنا|1926–2004|2|jr|من أعلام المدرسة المصرية، سجّل المصحف مرتّلًا ومجوّدًا.|حفص|
+محمود محمد الطبلاوي|1934–2021|2|jr|تولّى نقابة القرّاء سنوات طويلة، وعُرف بقوة الأداء وجزالة الصوت.|حفص|الطبلاوي
+الشحات محمد أنور|1950–2008|3|j|«كروان الإذاعة»، اشتهر بالنفَس الطويل والتلاوات الحيّة في المحافل.|حفص|
+كامل يوسف البهتيمي|1922–1969|2|j|اشتهر بإتقان الوقف والابتداء وجمال الأداء، ورحل شابًا.|حفص|
+طه الفشني|1900–1971|1|j|من أعلام العصر الذهبي، تميّز بالتمكّن في المقامات والإنشاد الديني.|حفص|
+أبو العينين شعيشع|1922–2011|2|j|من أبرز قرّاء الإذاعة والتلفزيون وأصحاب المحافل الكبرى.|حفص|
+علي محمود|1878–1946|1|j|من رواد المدرسة المصرية في التلاوة والإنشاد وأستاذ لجيل كامل.|حفص|
+أحمد نعينع|1954|3|j|من أبرز قرّاء الجيل الحديث بتلاوته المجوّدة في المحافل.|حفص|
+عبد الفتاح الشعشاعي||1|j|||
+محمد سلامة||1|j|||
+إبراهيم الشعشاعي||1|j|||
+راغب مصطفى غلوش||2|j|||
+عبد العظيم زاهر||2|j|||
+عبد الفتاح الطاروطي||2|j|||
+محمد عمران||2|j|||
+أحمد الرزيقي||2|j|||
+نصر الدين طوبار||2|j|||
+محمد الليثي||2|j|||
+منصور الشامي||2|j|||
+محمود الخشت||2|j|||
+عبد الحكيم عبد اللطيف||2|jr|||
+محمد عبد العزيز حصان||2|j|||
+أحمد ندا||2|j|||
+محمد الصيفي||2|j|||
+سيد النقشبندي||2|j|مبتهل وقارئ مصري كبير.||
+محمود عبد الحكم||3|j|||
+محمد جبريل||3|j|||
+محمد أحمد شبيب||3|j|||
+السيد متولي عبد العال||3|j|||
+سعيد عبد الصمد الزناتي||3|j|||
+محمد عبد الوهاب الطنطاوي||3|j|||
+ممدوح عامر||3|j|||
+طارق عبد الغني دعبس||3|j|||
+علي حجاج السويسي||3|j|||
+عبد الناصر حرك||3|j|||
+أحمد تميم المراغي||3|j|||
+محمود الشحات أنور||3|j|||
+ياسر سلامة||3|j|||
+رزق حبة||3|j|||
+أحمد عامر||3|j|||
+محمود رمضان||3|j|||
+عبد الباسط هاشم||3|j|||
+عبد الله كامل||3|j|||
+إسلام صبحي||3|j|||
+محمد الطوخي||3|j|||`.trim().split("\n").map(l=>{const[n,y,g,f,b,r,al]=l.split("|");return{n,y:y||"",g:+g,f:f||"",b:b||"",r:r?r.split(","):[],al:al?al.split(","):[]}});
+EGY.forEach(e=>XEG.push(e.n));
+XF.push(["المفضلة وآخر ما تصفحت","favs"],["أفضل 50 قارئ مصري مع المحافل والقراءات","egy"]);
+const GEN={1:"الجيل المؤسس",2:"العصر الذهبي",3:"المعاصرون"},GB={1:"من رواد المدرسة المصرية في التلاوة.",2:"من أصوات العصر الذهبي للتلاوة المصرية.",3:"من قرّاء مصر المعاصرين."};
+const egMatch=(n,e)=>{const a=XN(n);return[e.n].concat(e.al).map(XN).some(k=>a.includes(k)||(a.length>7&&k.includes(a)))};
+const egTags=e=>(e.f.includes("j")?'<span class="tag">مجوّد</span> ':"")+(e.f.includes("r")?'<span class="tag">مرتّل</span>':"");
+const egList=()=>{const q=XN(EG.q);return EGY.map((e,i)=>[e,i]).filter(([e])=>(!EG.gen||e.g===EG.gen)&&(!q||XN(e.n).includes(q))).map(([e,i])=>`<div class="card"><div class="row sb"><b>${i+1}. ${esc(e.n)}</b>${favBtn(egItem(i))}</div><div class="muted sm">${esc([e.y,GEN[e.g]].filter(Boolean).join(" · "))}</div><div>${egTags(e)}</div><p class="sm" style="margin:6px 0">${esc(e.b||GB[e.g])}</p><button class="btn sm" data-eg="open" data-v="${i}">${esc(L("Profile, rare recitations, qira'at","الملف · التلاوات النادرة · القراءات"))} ▸</button></div>`).join("")||`<div class="card flat muted">${esc(L("No results","لا نتائج"))}</div>`};
+V.egy=()=>head(t("egy"),L("Rare recitations and the qira'at each one read","المحافل والتلاوات النادرة والقراءات لكل شيخ"))+`<div class="notice">الترتيب تقريبي حسب الشهرة والأثر وليس تصنيفًا رسميًا، وبعض التواريخ متروكة فارغة لحين التأكد منها. تقدر تضيف أسماء من صفحة «القرّاء والمرتل والمجوّد».</div><input type="search" id="eg-q" value="${esc(EG.q)}" placeholder="${esc(L("Search reciters…","ابحث عن قارئ…"))}"><div class="row">${[[0,"الكل"],[1,GEN[1]],[2,GEN[2]],[3,GEN[3]]].map(([k,v])=>`<button class="chip" data-eg="gen" data-v="${k}" aria-pressed="${EG.gen===k}">${v}</button>`).join("")}</div><div id="eg-l" style="display:grid;gap:10px">${egList()}</div>`;
+V.sheikh=()=>{const i=EG.cur,e=EGY[i]||EGY[0];setTimeout(()=>egLoad(i));
+ const lk=(l,q)=>`<a class="chip" target="_blank" rel="noopener noreferrer" href="${yq(e.n+" "+q)}">▶ ${esc(l)}</a>`;
+ return `<p><a class="btn" href="#egy">← ${esc(t("egy"))}</a></p><div class="card"><div class="row sb"><h2 style="font-size:22px">${esc(e.n)}</h2>${favBtn(egItem(i))}</div><div class="muted sm">${esc([e.y,GEN[e.g]].filter(Boolean).join(" · "))}</div><div>${egTags(e)}</div><p>${esc(e.b||GB[e.g])}</p></div>
+<div class="card" style="position:sticky;top:60px;z-index:5" id="eg-now" hidden><b id="eg-nt"></b><audio id="eg-au" controls style="width:100%"></audio></div>
+<div class="card"><b>📖 القراءات التي قرأ بها</b><div class="row" style="margin-top:8px">${(e.r.length?e.r:["حفص عن عاصم (المتداولة)"]).map(w=>`<span class="tag">${esc(w)}</span>`).join("")}</div><p class="muted sm" style="margin:8px 0 4px">المسجّل فعليًا في مكتبة mp3quran:</p><div id="eg-rw" class="row"></div></div>
+<div class="card"><b>🎙 المحافل والتلاوات النادرة</b><div id="eg-rare" class="muted sm" style="margin-top:8px">…</div><p class="muted sm" style="margin:10px 0 4px">بحث مباشر على يوتيوب:</p><div class="row">${lk("محفل","محفل")}${lk("تلاوة نادرة","تلاوة نادرة")}${lk("تراويح وقيام","تراويح")}${lk("تسجيلات الإذاعة القديمة","تسجيل الإذاعة المصرية")}${lk("مجوّد","مجود")}${e.r.filter(x=>x!=="حفص").map(w=>lk(w,"رواية "+w)).join("")}</div></div>
+<div class="card"><b>🎧 كل التسجيلات المتاحة</b><div id="eg-all" class="muted sm" style="margin-top:8px">…</div></div>`};
+async function egLoad(i){const e=EGY[i],bad=L("Could not load. Check your connection.","تعذر التحميل. تأكد من الاتصال بالإنترنت.");
+ try{const j=await xj("https://www.mp3quran.net/api/v3/reciters?language=ar");if(EG.cur!==i||!$("#eg-all"))return;
+  const ms=j.reciters.filter(c=>egMatch(c.name,e)).flatMap(c=>(c.moshaf||[]).map(m=>({m,k:kindOf(m.name),sl:(m.surah_list||"").split(",").filter(Boolean).map(Number)})).filter(o=>o.sl.length&&o.m.server));
+  const blk=o=>`<details class="card flat" style="margin-top:6px"><summary class="sm"><b>${esc(o.m.name)}</b> · ${o.sl.length} ${esc(L("surahs","سورة"))}</summary><div class="row" style="margin-top:6px">${o.sl.map(s=>`<button class="chip" data-eg="play" data-u="${esc(o.m.server.replace(/\/?$/,"/")+String(s).padStart(3,"0")+".mp3")}" data-t="${esc(e.n+" — "+(AR[s-1]||s))}">${esc(AR[s-1]||s)}</button>`).join("")}</div></details>`;
+  const rare=ms.filter(o=>o.k==="rare"),rest=ms.filter(o=>o.k!=="rare");
+  xe("eg-rare",rare.length?rare.map(blk).join(""):esc(L("No live/rare recordings are listed for him in the mp3quran library; use the searches below.","لا توجد تسجيلات مصنّفة محافل/نادرة له في مكتبة mp3quran حاليًا؛ استخدم روابط البحث أدناه.")));
+  xe("eg-all",rest.length?rest.map(blk).join(""):esc(L("No recordings found in the library.","لم نجد تسجيلات له في المكتبة.")));
+  xe("eg-rw",[...new Set(ms.map(o=>o.m.name))].map(n=>`<span class="tag">${esc(n)}</span>`).join("")||`<span class="muted sm">—</span>`)}
+ catch(x){["eg-rare","eg-all"].forEach(d=>xe(d,esc(bad)))}}
+document.addEventListener("input",e=>{if(e.target.id==="eg-q"){EG.q=e.target.value;$("#eg-l").innerHTML=egList()}});
+
+/* --- mujawwad list: API reciters + Egyptian sheikhs not found in the API --- */
+mujUpdate=function(){const box=$("#qlist");if(!box)return;const a=mujShown(),names=mujAll().map(r=>r.name),q=mqNorm(S.qs||""),tot=EGY.filter(e=>e.f.includes("j")&&!names.some(n=>egMatch(n,e))),ex=tot.filter(e=>!q||mqNorm(e.n).includes(q));
+ const play=esc(L("Tap to listen to all surahs","اضغط للاستماع إلى كل السور"));
+ const items=a.map(r=>[r.name,`<div class="card" data-act="qid" data-id="${r.id}" role="button" tabindex="0" style="cursor:pointer"><b class="ar" style="font-size:20px;line-height:1.6">${esc(r.name)}</b><div><span class="tag">Mujawwad</span></div><div class="muted sm" style="margin-top:6px">▶ ${play}</div></div>`])
+ .concat(ex.map(e=>[e.n,`<div class="card" data-act="eg" data-e="${EGY.indexOf(e)}" role="button" tabindex="0" style="cursor:pointer"><b class="ar" style="font-size:20px;line-height:1.6">${esc(e.n)}</b><div><span class="tag">Mujawwad</span> <span class="tag">🇪🇬</span></div><div class="muted sm" style="margin-top:6px">${esc(L("Profile & recordings","الملف والتلاوات"))} ▸</div></div>`])).sort((x,y)=>x[0].localeCompare(y[0],"ar"));
+ box.innerHTML=items.map(x=>x[1]).join("")||`<p class="muted">${esc(L("No reciters found.","لا يوجد قرّاء."))}</p>`;$("#qcount").textContent=items.length+" / "+(names.length+tot.length)+" "+L("mujawwad reciters","قارئًا بالتلاوة المجوّدة")};
+
+/* --- clicks: favourite stars, jump-to items, clear, Egyptian reciters --- */
+document.addEventListener("click",e=>{
+ const s=e.target.closest(".fv");if(s){e.preventDefault();e.stopPropagation();try{toggleFav(JSON.parse(s.dataset.fv))}catch(x){}if(curRoute()==="favs")rr();return}
+ const g=e.target.closest("[data-gk]");if(g){const l=g.dataset.gs==="f"?fvL():rcL(),it=l.find(x=>x.t===g.dataset.gt&&x.k===g.dataset.gk);if(it){e.preventDefault();goItem(it)}return}
+ const x=e.target.closest("[data-fx]");if(x){if(confirm(L("Clear the list?","مسح القائمة؟"))){XS.s(x.dataset.fx==="f"?"fav":"rec",[]);if(x.dataset.fx==="f")XS.s("bm",[]);rr()}return}
+ const c=e.target.closest('[data-act="eg"]');if(c){EG.cur=+c.dataset.e;go("sheikh");return}
+ const b=e.target.closest("[data-eg]");if(!b)return;const a=b.dataset.eg,v=b.dataset.v;
+ if(a==="open"){EG.cur=+v;go("sheikh")}else if(a==="gen"){EG.gen=+v;rr()}
+ else if(a==="play"){$("#eg-now").hidden=false;$("#eg-nt").textContent=b.dataset.t;const au=$("#eg-au");au.src=b.dataset.u;au.play().catch(()=>{})}},true);
+/* keep the old tafsir bookmark button in sync with favourites */
+main.addEventListener("click",e=>{const b=e.target.closest('[data-x="bm"]');if(!b)return;const[s,a]=b.dataset.v.split(":").map(Number),it={t:"tafsir",k:"a"+s+":"+a,ti:"آية "+a+" — سورة "+AR[s-1],sb:"تفسير",st:{h:"tafsir",sur:s,ayah:a,tf:X.tf}},on=XS.g("bm",[]).includes(b.dataset.v),f=fvL(),i=f.findIndex(x=>x.t===it.t&&x.k===it.k);
+ if(on&&i<0){f.unshift(Object.assign({},it,{ts:Date.now()}));XS.s("fav",f)}else if(!on&&i>=0){f.splice(i,1);XS.s("fav",f)}topStar()});
+
 xApply();
 
 applyChrome();render();
