@@ -97,7 +97,7 @@ textarea{resize:vertical;min-height:76px}
 .time b{display:block;font-size:22px;font-variant-numeric:tabular-nums;color:var(--primary)}
 .time.next{border-color:var(--gold);background:var(--surface-2)}
 .time.next b{color:var(--gold-ink)}
-.compass{width:min(220px,100%);aspect-ratio:1;margin:0 auto;display:block}
+.playing{outline:2px solid var(--primary)} .compass{width:min(220px,100%);aspect-ratio:1;margin:0 auto;display:block}
 .bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--primary);transition:width .25s}
 .bubble{max-width:80%;padding:8px 14px;border-radius:16px;overflow-wrap:anywhere}
@@ -311,10 +311,34 @@ V.quran=()=>{
   return `<button class="chip" data-act="back" style="align-self:flex-start">← ${esc(t("quran"))}</button><div class="ph"><h1 class="ar" style="font-size:38px;color:var(--gold-ink);text-align:center">${esc(AR[n-1])}</h1><p style="text-align:center">${esc(EN[n-1])}</p></div>
    ${audioHTML(n)}${d?`<div class="row"><button class="chip" data-act="hifz" aria-pressed="${S.hifz}">${esc(L("Hifz test: hide words","اختبار الحفظ: إخفاء كلمات"))}</button>${S.hifz?`<button class="chip" data-act="hifzreset">${esc(L("Reset","إعادة"))}</button>`:""}</div>`:""}${body}${d?`<p class="muted sm">${esc(d.live?L("English: Saheeh International translation, loaded from alquran.cloud.","الإنجليزية: ترجمة صحيح إنترناشيونال من alquran.cloud."):L("English lines are short paraphrases of the meaning, not an official translation.","المعاني المعروضة تفسير مختصر وليست ترجمة معتمدة."))}</p>`:""}`};
 
+const MQ={list:null,state:"idle"},QS={i:-1,m:0,cur:0};
+const mqNorm=x=>x.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/(^|\s)(عبد|ابو|ابي)\s+/g,"$1$2").replace(/\s+/g," ").trim();
+const mqKey=x=>{const t=mqNorm(x).split(" ").filter(Boolean).map(w=>w.replace(/^ال/,""));return t.length?t[0]+"|"+t[t.length-1]:""};
+function mqFor(i){const k=mqKey(QARIS[i][1]);return (MQ.list||[]).filter(r=>mqKey(r.name)===k).flatMap(r=>(r.moshaf||[]).map(m=>Object.assign({},m,{rname:r.name}))).filter(m=>m.server&&m.surah_list)}
+function loadReciters(){MQ.state="loading";
+  fetch("https://www.mp3quran.net/api/v3/reciters?language=ar").then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{MQ.list=j.reciters||[];MQ.state="ok"}).catch(()=>{MQ.state="err"}).then(()=>{if(location.hash.slice(1)==="qari")render()});}
+function qPlay(n){const ms=mqFor(QS.i),m=ms[QS.m],a=$("#qa");if(!m||!a)return;QS.cur=n;$("#qmsg").textContent="";
+  a.src=m.server+String(n).padStart(3,"0")+".mp3";a.play().catch(()=>{});$("#qnow").textContent=n+". "+EN[n-1]+" · "+AR[n-1];
+  document.querySelectorAll("[data-row]").forEach(r=>r.classList.toggle("playing",+r.dataset.row===n));}
+document.addEventListener("ended",e=>{if(e.target.id!=="qa")return;const m=mqFor(QS.i)[QS.m];if(!m)return;const av=new Set(m.surah_list.split(",").map(Number));for(let n=QS.cur+1;n<=114;n++)if(av.has(n)){qPlay(n);return}},true);
+document.addEventListener("error",e=>{if(e.target.id==="qa"&&e.target.getAttribute("src")){const m=$("#qmsg");if(m)m.textContent=L("This recording could not be played. Try another surah or reciter.","تعذر تشغيل هذا التسجيل. جرّب سورة أو قارئًا آخر.")}},true);
+V.qari=()=>{
+  const i=S.qari!=null&&QARIS[S.qari]?S.qari:0,q=QARIS[i];
+  const title=head(S.lang==="ar"?q[1]:q[0],S.lang==="ar"?q[0]:q[1]);
+  const back=`<p><a class="btn" href="#qaris">← ${esc(L("All reciters","كل القرّاء"))}</a></p>`;
+  if(MQ.state==="idle")loadReciters();
+  if(MQ.state!=="ok")return title+back+(MQ.state==="err"?`<div class="notice">${esc(L("Could not load the recitations. Check your internet connection and try again.","تعذر تحميل التلاوات. تحقق من الإنترنت وحاول مرة أخرى."))} <a href="https://mp3quran.net" target="_blank" rel="noopener">mp3quran.net ↗</a></div>`:`<div class="card flat">${esc(L("Loading recitations…","جارٍ تحميل التلاوات…"))}</div>`);
+  const ms=mqFor(i);
+  if(!ms.length)return title+back+`<div class="notice">${esc(L("No recordings were found for this reciter.","لم يتم العثور على تسجيلات لهذا القارئ."))} <a href="https://mp3quran.net" target="_blank" rel="noopener">mp3quran.net ↗</a></div>`;
+  if(QS.i!==i){QS.i=i;QS.cur=0;let b=0;ms.forEach((m,k)=>{const sc=(/حفص/.test(m.name)&&/مرتل/.test(m.name)?1000:0)+(+m.surah_total||0);const bs=(/حفص/.test(ms[b].name)&&/مرتل/.test(ms[b].name)?1000:0)+(+ms[b].surah_total||0);if(sc>bs)b=k});QS.m=b}
+  const m=ms[Math.min(QS.m,ms.length-1)],av=new Set(m.surah_list.split(",").map(Number));
+  const rows=Array.from({length:114},(_,k)=>k+1).map(n=>`<div class="card row sb" data-row="${n}"><div><b>${n}. ${esc(EN[n-1])}</b> <span class="muted">· ${esc(AR[n-1])}</span></div>${av.has(n)?`<button class="chip" data-act="qplay" data-n="${n}" aria-label="Play">▶ ${esc(L("Play","تشغيل"))}</button>`:`<span class="muted sm">${esc(L("Not available","غير متوفرة"))}</span>`}</div>`).join("");
+  return title+back+`<div class="card" style="position:sticky;top:8px;z-index:5;display:grid;gap:8px"><b id="qnow">${esc(L("Choose a surah to play","اختر سورة للاستماع"))}</b><audio id="qa" controls preload="none" style="width:100%"></audio><div class="muted sm" id="qmsg"></div>${ms.length>1?`<select id="moshaf" aria-label="Recitation">${ms.map((x,k)=>`<option value="${k}" ${k===QS.m?"selected":""}>${esc(x.name)} (${x.surah_total})</option>`).join("")}</select>`:`<span class="muted sm">${esc(m.name)} · ${m.surah_total} ${esc(L("surahs","سورة"))}</span>`}</div>${rows}`;
+};
 V.qaris=()=>{const f=S.qf||"all";const l=QARIS.filter(x=>f==="all"||x[2]===f||x[2]==="both");
-  return head(t("qaris"),t("qarisSub"))+`<div class="notice">${esc(L("Directory of 20 reciters. To listen, open any surah on the Quran page and choose Mishary Alafasy, Abdul Basit or Saud Ash-Shuraim.","دليل لـ20 قارئًا. للاستماع افتح أي سورة في صفحة القرآن واختر مشاري العفاسي أو عبد الباسط أو سعود الشريم."))}</div>
+  return head(t("qaris"),t("qarisSub"))+`<div class="notice">${esc(L("Tap a reciter to see all 114 surahs in his voice and play them.","اضغط على قارئ لعرض السور الـ114 بصوته والاستماع إليها."))}</div>
   <div class="row">${[["all",L("All","الكل")],["murattal",L("Murattal","مرتّل")],["mujawwad",L("Mujawwad","مجوّد")]].map(([k,v])=>`<button class="chip" data-act="qf" data-s="${k}" aria-pressed="${f===k}">${esc(v)}</button>`).join("")}</div>
-  <div class="grid2">${l.map(x=>`<div class="card"><b>${esc(x[0])}</b><div class="ar" style="font-size:20px;line-height:1.6">${esc(x[1])}</div><span class="tag">${x[2]==="both"?"Murattal · Mujawwad":x[2]}</span></div>`).join("")}</div>`};
+  <div class="grid2">${l.map(x=>`<div class="card" data-act="qari" data-i="${QARIS.indexOf(x)}" role="button" tabindex="0" style="cursor:pointer"><b>${esc(x[0])}</b><div class="ar" style="font-size:20px;line-height:1.6">${esc(x[1])}</div><span class="tag">${x[2]==="both"?"Murattal · Mujawwad":x[2]}</span><div class="muted sm" style="margin-top:6px">▶ ${esc(L("Tap to listen to all surahs","اضغط للاستماع إلى كل السور"))}</div></div>`).join("")}</div>`};
 
 V.hadith=()=>head(t("hadith"),t("hadithSub"))+HADITH.map(h=>`<article class="card"><div class="ar" style="font-size:24px">${esc(h.ar)}</div><p style="margin:6px 0">${esc(h.en)}</p><div class="row sb"><span class="muted sm">${esc(h.src)}</span><span class="tag">${esc(h.topic)}</span></div></article>`).join("")+`<p class="muted sm">${esc(L("English lines are paraphrases. Check the cited collection for the exact wording and grading.","الإنجليزية بتصرّف. راجع المصدر المذكور للنص الدقيق والدرجة."))}</p>`;
 
@@ -429,7 +453,7 @@ window.addEventListener("hashchange",render);
 
 /* ---------- events ---------- */
 const main=$("#main");
-main.addEventListener("change",e=>{if(e.target.id==="reciter"){S.reciter=e.target.value;save();const y=window.scrollY;render();window.scrollTo(0,y)}});
+main.addEventListener("change",e=>{if(e.target.id==="moshaf"){QS.m=+e.target.value;render();return}if(e.target.id==="reciter"){S.reciter=e.target.value;save();const y=window.scrollY;render();window.scrollTo(0,y)}});
 main.addEventListener("click",e=>{
   const b=e.target.closest("[data-act]");if(!b)return;
   const act=b.dataset.act,card=b.closest("[data-id]"),id=card&&card.dataset.id,keep=()=>{const y=window.scrollY;render();window.scrollTo(0,y)};
@@ -449,6 +473,8 @@ main.addEventListener("click",e=>{
   else if(act==="hifzreset"){for(const k in S.revealed)if(k[0]==="h")delete S.revealed[k];save();keep()}
   else if(act==="reveal"){S.revealed[b.dataset.k]=true;save();keep()}
   else if(act==="qstart"){startQibla()}
+  else if(act==="qari"){S.qari=+b.dataset.i;location.hash="qari"}
+  else if(act==="qplay"){qPlay(+b.dataset.n)}
   else if(act==="qf"){S.qf=b.dataset.s;keep()}
   else if(act==="dhikr"){const i=+b.dataset.i,n=ADHKAR[i].n;S.adhkar.done[i]=Math.min((S.adhkar.done[i]||0)+1,n);
     if(ADHKAR.every((a,k)=>(S.adhkar.done[k]||0)>=a.n)&&S.streak.last!==dayKey()){const y=new Date(Date.now()-864e5).toDateString();S.streak={n:S.streak.last===y?S.streak.n+1:1,last:dayKey()}}
