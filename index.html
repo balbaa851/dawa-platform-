@@ -617,7 +617,7 @@ const X={cache:{},rec:{kind:"",rw:"",eg:false,q:""},book:{b:"nawawi",p:1,q:""},s
 const xj=async u=>{if(X.cache[u])return X.cache[u];const r=await fetch(u);if(!r.ok)throw new Error(r.status);return X.cache[u]=await r.json()};
 const xe=(id,h)=>{const e=document.getElementById(id);if(e)e.innerHTML=h};
 const xerr=(id,m)=>xe(id,`<div class="card flat">${esc(L("Could not load. Check your internet connection or open the file from a web host.","تعذر التحميل. تأكد من الإنترنت أو افتح الملف من موقع مستضاف."))} (${esc(m)})</div>`);
-const chips=(arr,cur,act)=>`<div class="row">${arr.map(([k,v])=>`<button class="chip" data-x="${act}" data-v="${esc(k)}" aria-pressed="${cur===k}">${esc(v)}</button>`).join("")}</div>`;
+const chips=(arr,cur,act)=>`<div class="row">${arr.map(([k,v])=>`<button class="chip" data-x="${act}" data-y="${act}" data-v="${esc(k)}" aria-pressed="${cur===k}">${esc(v)}</button>`).join("")}</div>`;
 /* --- tafsir --- */
 const TF={muyassar:["ar-tafsir-muyassar","الميسر"],saadi:["ar-tafseer-al-saddi","السعدي"],ibnkathir:["ar-tafsir-ibn-kathir","ابن كثير"],qurtubi:["ar-tafseer-al-qurtubi","القرطبي"],tabari:["ar-tafsir-al-tabari","الطبري"],baghawi:["ar-tafseer-al-baghawi","البغوي"]};
 V.tafsir=()=>{setTimeout(xTafsir);return head(t("tafsir"),L("Full Quran with six tafsir books","المصحف كاملًا مع ستة تفاسير"))+`<select id="x-sur">${AR.map((a,i)=>`<option value="${i+1}" ${X.sur===i+1?"selected":""}>${i+1}. ${esc(a)}</option>`).join("")}</select>`+chips(Object.entries(TF).map(([k,v])=>[k,v[1]]),X.tf,"tf")+`<div id="x-out" class="card flat">…</div>`};
@@ -761,22 +761,170 @@ TABS.forEach(x=>{if(x[0]==="prayer")x[0]="salah"});
 const gb=document.createElement("a");gb.className="iconbtn gear";gb.href="#settings";gb.textContent="⚙";gb.setAttribute("aria-label","Settings");$("#themeBtn").before(gb);
 /* A–Z order for old reciter list */
 const _ms=typeof mujShown==="function"?mujShown:null;
-/* ---------- prayer times ---------- */
+
+const xcss2=document.createElement("style");xcss2.textContent=`
+.sl-hero{position:relative;overflow:hidden;border-radius:22px;padding:16px 16px 12px;color:#fff;background:linear-gradient(160deg,#0a1630,#16295a 55%,#27497d);box-shadow:0 10px 30px rgba(8,20,50,.22);transition:background .8s;display:grid;gap:10px}
+.sl-hero[data-ph="dawn"]{background:linear-gradient(160deg,#27275a,#6a4d90 55%,#e39a7e)}
+.sl-hero[data-ph="day"]{background:linear-gradient(160deg,#0b64a8,#2a9fd6 60%,#86d0e6)}
+.sl-hero[data-ph="aft"]{background:linear-gradient(160deg,#b45f17,#e29a36 60%,#f4d086)}
+.sl-hero[data-ph="dusk"]{background:linear-gradient(160deg,#36285a,#9c4766 55%,#ee8548)}
+.sl-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 8%,rgba(255,255,255,.18),transparent 45%);pointer-events:none}
+.sl-hero>*{position:relative}
+.sl-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sl-pill{display:inline-flex;align-items:center;gap:6px;max-width:100%;background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer}
+.sl-pill b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sl-pill:hover{background:rgba(255,255,255,.26)}
+.sl-date{font-size:13px;opacity:.9}
+.sl-mid{text-align:center;display:grid;gap:2px;padding:6px 0 2px}
+.sl-now{font-size:13px;opacity:.85}
+.sl-lbl{font-size:13px;opacity:.85;margin-top:4px}
+.sl-next{font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1.25}
+.sl-cd{font-size:46px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px;direction:ltr;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.2)}
+.sl-at{font-size:14px;opacity:.9}
+.sl-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+.sl-bar i{display:block;height:100%;width:0;background:#fff;border-radius:99px;transition:width .6s linear}
+.sl-arc{width:100%;height:auto;display:block;max-height:120px}
+.sl-sr{display:flex;justify-content:space-between;font-size:13px;opacity:.95;margin-top:-4px}
+.sl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.sl-p{position:relative;display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);transition:border-color .2s,background .2s,opacity .2s}
+.sl-p .ico{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:var(--tint);color:var(--primary);flex:none}
+.sl-p .nm{font-weight:700;font-size:16px}
+.sl-p .tm{display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums}
+.sl-p .tm b{font-size:21px}
+.sl-p .tm small{font-size:12px;color:var(--muted)}
+.sl-p.sun{background:var(--surface-2);border-style:dashed}
+.sl-p.sun .ico{background:rgba(212,175,55,.18);color:var(--gold-ink)}
+.sl-p.sun .nm{font-weight:500}
+.sl-p.past{opacity:.55}
+.sl-p.next{opacity:1;border-color:var(--primary);background:linear-gradient(135deg,var(--tint),var(--surface));box-shadow:0 0 0 1.5px var(--primary)}
+.sl-p.next .ico{background:var(--primary);color:#fff}
+.sl-badge{position:absolute;top:-9px;inset-inline-end:12px;font-size:11px;font-weight:700;background:var(--primary-strong);color:#fff;border-radius:999px;padding:1px 10px}
+.sl-q{display:flex;align-items:center;gap:14px}
+.sl-deg{font-size:28px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
+.sl-deg small{font-size:13px;color:var(--muted);font-weight:500}
+.sl-pick{display:grid;gap:10px;border-color:var(--primary)}
+.sl-warn{margin:0;padding:8px 12px;border-radius:10px;background:var(--warn-bg);font-size:13px}
+.sl-r{display:flex;justify-content:space-between;gap:8px;align-items:center;width:100%;text-align:start;padding:9px 12px;margin-top:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+.sl-r:hover{border-color:var(--primary);background:var(--tint)}
+.zk-px{display:grid;gap:10px;border-color:rgba(212,175,55,.5);background:linear-gradient(160deg,rgba(212,175,55,.10),var(--surface) 60%)}
+.zk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.zk-t{border-radius:14px;padding:10px 12px;background:var(--surface-2);display:grid;gap:1px}
+.zk-t small{color:var(--muted);font-size:12px}
+.zk-t b{font-size:19px;font-variant-numeric:tabular-nums}
+.zk-t.g{background:linear-gradient(135deg,rgba(212,175,55,.28),rgba(212,175,55,.07))}
+.zk-t.s{background:linear-gradient(135deg,rgba(148,163,184,.32),rgba(148,163,184,.08))}
+.zk-nis{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.zk-nis b{color:var(--fg)}
+.zk-st{margin:0;font-size:12.5px;color:var(--muted);line-height:1.8}
+.zk-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--warn-bg);font-size:13px}
+@media (max-width:420px){.sl-cd{font-size:40px}.sl-next{font-size:30px}.sl-grid{grid-template-columns:1fr 1fr}.sl-p{flex-wrap:wrap;gap:8px}.sl-p .tm{width:100%}.sl-q{flex-direction:column;text-align:center}}
+`;document.head.appendChild(xcss2);
+/* ---------- prayer times (redesigned: hero + sun arc + cards, GPS first, manual fallback) ---------- */
 const PK=["fajr","sunrise","dhuhr","asr","maghrib","isha"],PA=["الفجر","الشروق","الظهر","العصر","المغرب","العشاء"],PE=["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"];
-const X2={pos:null,iv:0};
-V.salah=()=>{setTimeout(xSalah);return head(t("salah"),L("Based on your device location","حسب موقع جهازك الحالي"))+`<div id="x-sal"><div class="card flat">${esc(L("Getting your location…","جارٍ تحديد موقعك…"))}</div></div>`};
-function xSalah(){if(!navigator.geolocation){return xSalErr(L("Location is not supported","المتصفح لا يدعم تحديد الموقع"))}
-navigator.geolocation.getCurrentPosition(p=>{X2.pos=[p.coords.latitude,p.coords.longitude,p.coords.accuracy];xSalTimes()},e=>xSalErr(e.code===1?L("Location permission denied. Allow it in browser settings, then retry.","تم رفض إذن الموقع. اسمح به من إعدادات المتصفح ثم أعد المحاولة."):L("Could not get location.","تعذر تحديد الموقع.")),{enableHighAccuracy:true,timeout:25000,maximumAge:0})}
-function xSalErr(m){xe("x-sal",`<div class="card">${esc(m)}<div class="row" style="margin-top:8px"><button class="btn sm" data-y="retry">${esc(L("Retry","إعادة المحاولة"))}</button></div><p class="muted sm">${esc(L("Or choose a city:","أو اختر مدينة:"))}</p><div class="row">${Object.keys(CITIES).map(c=>`<button class="chip" data-y="city" data-v="${esc(c)}">${esc(c)}</button>`).join("")}</div></div>`)}
-const autoM=(la,ln)=>la>21.7&&la<31.7&&ln>24.7&&ln<36.9?5:la>16&&la<32.5&&ln>34&&ln<56?4:3;
-async function xSalTimes(){const s=SET(),[la,ln,ac]=X2.pos,d=new Date(),m=s.meth==="auto"?autoM(la,ln):+s.meth,tz=Intl.DateTimeFormat().resolvedOptions().timeZone;let T_,src="";
-try{const dd=`${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`;const j=await xj(`https://api.aladhan.com/v1/timings/${dd}?latitude=${la.toFixed(4)}&longitude=${ln.toFixed(4)}&method=${m}&school=${s.hanafi?1:0}&timezonestring=${encodeURIComponent(tz)}`);const g=j.data.timings;T_=["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"].map(k=>{const [h,mi]=g[k].split(" ")[0].split(":").map(Number);const x=new Date(d);x.setHours(h,mi,0,0);return x});src="Aladhan API"}
-catch(e){const M={5:"egypt",3:"mwl",2:"isna",4:"makkah"}[m]||"mwl",o=prayerTimes(d.getFullYear(),d.getMonth()+1,d.getDate(),la,ln,METHODS[M]);T_=PK.map(k=>o[k]);src=L("Offline calculation","حساب محلي بدون إنترنت")}
-T_=T_.map((x,i)=>new Date(+x+s.adj[i]*6e4));X2.t=T_;X2.show={la,ln,ac,src,m};xSalDraw();clearInterval(X2.iv);X2.iv=setInterval(xSalTick,1000)}
-const fmt=x=>isNaN(x)?"—":x.toLocaleTimeString(S.lang==="ar"?"ar-EG":"en-US",{hour:"2-digit",minute:"2-digit",hour12:!SET().h24});
-function xSalDraw(){const T_=X2.t,o=X2.show,b=qibla(o.la,o.ln),MN={5:"الهيئة المصرية",4:"أم القرى",3:"رابطة العالم الإسلامي",2:"أمريكا الشمالية"};
-xe("x-sal",`<div class="card flat row sb"><span class="muted">${esc(L("Next prayer","الصلاة القادمة"))}: <b id="x-nn" style="color:var(--fg)"></b></span><b id="x-cd" style="font-size:24px;font-variant-numeric:tabular-nums"></b></div>`+T_.map((x,i)=>`<div class="card row sb" id="x-p${i}"><b>${esc(S.lang==="ar"?PA[i]:PE[i])}</b><span style="font-variant-numeric:tabular-nums;font-size:18px">${fmt(x)}</span></div>`).join("")+`<div class="card" style="text-align:center">${esc(L("Qibla","اتجاه القبلة"))}: <b>${Math.round(b)}°</b> ${esc(L("from North (clockwise)","من الشمال مع عقارب الساعة"))}</div><p class="muted sm">${esc(L("Source","المصدر"))}: ${esc(o.src)} · ${esc(L("Method","الطريقة"))}: ${esc(MN[o.m]||o.m)} · ${esc(L("Accuracy","دقة الموقع"))} ±${Math.round(o.ac)}m · ${o.la.toFixed(3)}, ${o.ln.toFixed(3)}<br>${esc(L("You can change the method, Asr school and minute adjustments in Settings.","غيّر طريقة الحساب ومذهب العصر وتعديل الدقائق من الإعدادات."))}</p><div class="row"><button class="btn sm" data-y="retry">📍 ${esc(L("Update location","تحديث الموقع"))}</button></div>`);xSalTick()}
-function xSalTick(){const e=$("#x-cd");if(!e){clearInterval(X2.iv);return}const now=new Date();let n=X2.t.findIndex((x,i)=>i!==1&&x>now),add=0;if(n<0){n=0;add=864e5}const df=Math.max(0,X2.t[n]-now+add),f=v=>String(v).padStart(2,"0");e.textContent=`${f(Math.floor(df/36e5))}:${f(Math.floor(df%36e5/6e4))}:${f(Math.floor(df%6e4/1e3))}`;$("#x-nn").textContent=S.lang==="ar"?PA[n]:PE[n];X2.t.forEach((_,i)=>{const c=$("#x-p"+i);if(c)c.style.borderColor=i===n?"var(--primary)":""})}
+const X2={iv:0,loc:null,pick:false,pmsg:"",res:[],t:null,tm:null,seq:0,d:0,tz:"UTC",done:true,wd:0};
+const SLC=[["القاهرة","Cairo",30.0444,31.2357,"Africa/Cairo"],["الإسكندرية","Alexandria",31.2001,29.9187,"Africa/Cairo"],["الجيزة","Giza",30.0131,31.2089,"Africa/Cairo"],["طنطا","Tanta",30.7865,31.0004,"Africa/Cairo"],["المنصورة","Mansoura",31.0409,31.3785,"Africa/Cairo"],["الإسماعيلية","Ismailia",30.5965,32.2715,"Africa/Cairo"],["بورسعيد","Port Said",31.2653,32.3019,"Africa/Cairo"],["السويس","Suez",29.9668,32.5498,"Africa/Cairo"],["أسيوط","Asyut",27.1783,31.1859,"Africa/Cairo"],["الأقصر","Luxor",25.6872,32.6396,"Africa/Cairo"],["أسوان","Aswan",24.0889,32.8998,"Africa/Cairo"],["شرم الشيخ","Sharm El-Sheikh",27.9158,34.33,"Africa/Cairo"],["الغردقة","Hurghada",27.2579,33.8116,"Africa/Cairo"],
+["مكة المكرمة","Makkah",21.3891,39.8579,"Asia/Riyadh"],["المدينة المنورة","Madinah",24.4672,39.6024,"Asia/Riyadh"],["الرياض","Riyadh",24.7136,46.6753,"Asia/Riyadh"],["جدة","Jeddah",21.4858,39.1925,"Asia/Riyadh"],["الدمام","Dammam",26.4207,50.0888,"Asia/Riyadh"],["دبي","Dubai",25.2048,55.2708,"Asia/Dubai"],["أبوظبي","Abu Dhabi",24.4539,54.3773,"Asia/Dubai"],["الكويت","Kuwait City",29.3759,47.9774,"Asia/Kuwait"],["الدوحة","Doha",25.2854,51.531,"Asia/Qatar"],["المنامة","Manama",26.2285,50.586,"Asia/Bahrain"],["مسقط","Muscat",23.588,58.3829,"Asia/Muscat"],
+["عمّان","Amman",31.9454,35.9284,"Asia/Amman"],["القدس","Jerusalem",31.7683,35.2137,"Asia/Jerusalem"],["بيروت","Beirut",33.8938,35.5018,"Asia/Beirut"],["دمشق","Damascus",33.5138,36.2765,"Asia/Damascus"],["بغداد","Baghdad",33.3152,44.3661,"Asia/Baghdad"],["الخرطوم","Khartoum",15.5007,32.5599,"Africa/Khartoum"],["طرابلس","Tripoli",32.8872,13.1913,"Africa/Tripoli"],["تونس","Tunis",36.8065,10.1815,"Africa/Tunis"],["الجزائر","Algiers",36.7538,3.0588,"Africa/Algiers"],["الرباط","Rabat",34.0209,-6.8416,"Africa/Casablanca"],["الدار البيضاء","Casablanca",33.5731,-7.5898,"Africa/Casablanca"],
+["إسطنبول","Istanbul",41.0082,28.9784,"Europe/Istanbul"],["لندن","London",51.5074,-0.1278,"Europe/London"],["باريس","Paris",48.8566,2.3522,"Europe/Paris"],["نيويورك","New York",40.7128,-74.006,"America/New_York"],["تورونتو","Toronto",43.6532,-79.3832,"America/Toronto"],["كراتشي","Karachi",24.8607,67.0011,"Asia/Karachi"],["جاكرتا","Jakarta",-6.2088,106.8456,"Asia/Jakarta"],["كوالالمبور","Kuala Lumpur",3.139,101.6869,"Asia/Kuala_Lumpur"]];
+const slN=c=>S.lang==="ar"?c[0]:c[1];
+const pad2=v=>String(v).padStart(2,"0");
+/* timezone-correct instants: build a Date for wall-clock h:mi on y-m-d in an IANA zone */
+function slOff(ms,tz){const p=new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric"}).formatToParts(new Date(ms)),g=k=>+p.find(x=>x.type===k).value;return Date.UTC(g("year"),g("month")-1,g("day"),g("hour")%24,g("minute"),g("second"))-Math.floor(ms/1000)*1000}
+function slZ(y,m,d,h,mi,tz){const u=Date.UTC(y,m-1,d,h,mi);let r=u-slOff(u,tz);r=u-slOff(r,tz);return new Date(r)}
+const slKm=(a,b,c,d)=>{const R=6371,p=rad(c-a),q=rad(d-b),x=Math.sin(p/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(q/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+const slNear=(la,ln)=>{let b=null,bd=60;SLC.forEach(c=>{const k=slKm(la,ln,c[2],c[3]);if(k<bd){bd=k;b=c}});return b};
+const autoM=(la,ln,tz)=>tz==="Africa/Cairo"?5:la>21.7&&la<31.7&&ln>24.7&&ln<36.9?5:la>16&&la<29.6&&ln>34&&ln<60?4:la>35.5&&la<42.5&&ln>25.5&&ln<45?13:la>5&&la<37&&ln>60&&ln<92?1:la>15&&la<72&&ln>-170&&ln<-50?2:3;
+const slTm=(d,tz)=>{if(isNaN(d))return{hm:"--:--",ap:""};const p=new Intl.DateTimeFormat(S.lang==="ar"?"ar-EG-u-nu-latn":"en-US",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:!SET().h24,hourCycle:SET().h24?"h23":"h12"}).formatToParts(d),g=k=>(p.find(x=>x.type===k)||{}).value||"";return{hm:g("hour")+":"+g("minute"),ap:g("dayPeriod")}};
+const fmt=x=>{const o=slTm(x,X2.tz);return(o.hm+" "+o.ap).trim()};
+const ICON={0:'<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v3M4.6 8.6l2 2M19.4 8.6l-2 2"/>',1:'<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 3v6M9.5 5.5L12 3l2.5 2.5"/>',2:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',3:'<circle cx="12" cy="13" r="4"/><path d="M12 4v2M3.5 13H6M18 13h2.5M5.9 6.9l1.5 1.5M18.1 6.9l-1.5 1.5M4 21h16"/>',4:'<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 9V3M9.5 6.5L12 9l2.5-2.5"/>',5:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 4v3M15.5 5.5h3"/>'};
+const pico=i=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[i]}</svg>`;
+
+V.salah=()=>{setTimeout(()=>xSalah(false));return head(t("salah"),L("Based on your location, or pick a city","حسب موقعك، أو اختر مدينتك يدويًا"))+`<div id="x-sal" style="display:grid;gap:12px">${X2.t?"":`<div class="card flat">${esc(L("Getting your location…","جارٍ تحديد موقعك…"))}</div>`}</div>`};
+
+function slPick(){return `<div class="card sl-pick"><div class="row sb"><b>📍 ${esc(L("Choose your location","اختر مكانك"))}</b>${X2.t?`<button class="chip" data-y="lcl" aria-label="Close">✕</button>`:""}</div>${X2.pmsg?`<p class="sl-warn">${esc(X2.pmsg)}</p>`:""}<button class="btn" data-y="gps">📡 ${esc(L("Use my current location (GPS)","استخدم موقعي الحالي (GPS)"))}</button><input type="search" id="sl-q" autocomplete="off" placeholder="${esc(L("Search any city in the world…","ابحث عن أي مدينة في العالم…"))}"><div id="sl-res"></div><p class="muted sm" style="margin:0">${esc(L("Quick picks","اختيار سريع"))}</p><div class="row">${SLC.map((c,i)=>`<button class="chip" data-y="city" data-v="${i}">${esc(slN(c))}</button>`).join("")}</div></div>`}
+
+function xSalah(force){
+  clearTimeout(X2.wd);const lm=XS.g("lm",null),pref=XS.g("lpref",false);
+  if(!force&&lm&&pref){X2.loc=lm;X2.pick=false;return xSalTimes()}
+  if(!navigator.geolocation)return xSalFail(L("This browser does not support location.","المتصفح لا يدعم تحديد الموقع."));
+  if(!X2.t)xe("x-sal",`<div class="card flat">${esc(L("Getting your location…","جارٍ تحديد موقعك…"))}</div>`);
+  X2.done=false;
+  const fail=m=>{if(X2.done)return;X2.done=true;clearTimeout(X2.wd);xSalFail(m)};
+  X2.wd=setTimeout(()=>fail(L("Location request timed out.","انتهت مهلة تحديد الموقع.")),20000);
+  navigator.geolocation.getCurrentPosition(p=>{if(X2.done)return;X2.done=true;clearTimeout(X2.wd);
+    const la=p.coords.latitude,ln=p.coords.longitude,c=slNear(la,ln);
+    X2.loc={mode:"gps",la,ln,ac:p.coords.accuracy||0,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,name:c?slN(c):""};
+    XS.s("lg",X2.loc);XS.s("lpref",false);X2.pick=false;X2.pmsg="";stopQibla();xSalTimes()},
+    e=>fail(e.code===1?L("Location permission was denied. Allow it in your browser settings, or choose your city below.","تم رفض إذن الموقع. اسمح به من إعدادات المتصفح، أو اختر مدينتك من الأسفل."):L("Could not get your location. Choose your city below.","تعذر تحديد موقعك. اختر مدينتك من الأسفل.")),
+    {enableHighAccuracy:false,timeout:15000,maximumAge:600000});
+}
+function xSalFail(m){X2.pmsg=m;X2.pick=true;const fb=XS.g("lm",null)||XS.g("lg",null);
+  if(fb){X2.loc=fb;xSalTimes()}else{X2.loc=null;xe("x-sal",slPick())}}
+function xSalSet(o){X2.loc=Object.assign({mode:"manual",ac:0},o);XS.s("lm",X2.loc);XS.s("lpref",true);X2.pick=false;X2.pmsg="";stopQibla();xSalTimes()}
+
+async function xSalTimes(){
+  const my=++X2.seq,s=SET(),o=X2.loc,la=o.la,ln=o.ln,tz=o.tz||Intl.DateTimeFormat().resolvedOptions().timeZone,now=new Date();
+  X2.tz=tz;
+  const [y,m,d]=ymdIn(tz,now),nx=new Date(Date.UTC(y,m-1,d+1)),y2=nx.getUTCFullYear(),m2=nx.getUTCMonth()+1,d2=nx.getUTCDate();
+  const meth=s.meth==="auto"?autoM(la,ln,tz):+s.meth;
+  const api=async(yy,mm,dd)=>{const j=await xj(`https://api.aladhan.com/v1/timings/${pad2(dd)}-${pad2(mm)}-${yy}?latitude=${la.toFixed(4)}&longitude=${ln.toFixed(4)}&method=${meth}&school=${s.hanafi?1:0}&timezonestring=${encodeURIComponent(tz)}`);const g=j.data.timings;return["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"].map(k=>{const [h,mi]=g[k].split(" ")[0].split(":").map(Number);return slZ(yy,mm,dd,h,mi,tz)})};
+  let T0,T1=null,src="Aladhan API";
+  try{[T0,T1]=await Promise.all([api(y,m,d),api(y2,m2,d2).catch(()=>null)])}
+  catch(e){const M=METHODS[{5:"egypt",3:"mwl",2:"isna",4:"makkah"}[meth]||"mwl"],a=prayerTimes(y,m,d,la,ln,M),b=prayerTimes(y2,m2,d2,la,ln,M);T0=PK.map(k=>a[k]);T1=PK.map(k=>b[k]);src=L("Offline calculation","حساب محلي بدون إنترنت")}
+  if(my!==X2.seq)return;
+  const adj=(a,i)=>new Date(+a+(s.adj[i]||0)*6e4);
+  X2.t=T0.map(adj);X2.tm=T1?adj(T1[0],0):new Date(+X2.t[0]+864e5);X2.d=d;X2.show={src,m:meth};
+  xSalDraw();clearInterval(X2.iv);X2.iv=setInterval(xSalTick,1000);
+  if(!o.name&&o.mode==="gps")slRev(o);
+}
+async function slRev(o){try{const j=await xj(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${o.la.toFixed(3)}&longitude=${o.ln.toFixed(3)}&localityLanguage=${S.lang}`);const n=j.city||j.locality||j.principalSubdivision;if(n){o.name=n;const e=$("#sl-nm");if(e)e.textContent=n;XS.s("lg",o)}}catch(e){}}
+
+let slT;
+function xSalSearch(q){clearTimeout(slT);const box=$("#sl-res");if(!box)return;q=q.trim();if(q.length<2){box.innerHTML="";return}
+  const nq=XN(q.toLowerCase()),loc=SLC.map((c,i)=>[c,i]).filter(([c])=>XN((c[0]+" "+c[1]).toLowerCase()).includes(nq)).slice(0,5).map(([c,i])=>`<button class="sl-r" data-y="city" data-v="${i}"><b>${esc(slN(c))}</b></button>`).join("");
+  box.innerHTML=loc+`<p class="muted sm" style="margin:4px 0">${esc(L("Searching…","جارٍ البحث…"))}</p>`;
+  slT=setTimeout(async()=>{const b=$("#sl-res");if(!b)return;
+    try{const j=await xj(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=${S.lang}&format=json`);X2.res=j.results||[];
+      b.innerHTML=loc+(X2.res.length?X2.res.map((r,i)=>`<button class="sl-r" data-y="pick" data-v="${i}"><b>${esc(r.name)}</b><span class="muted sm">${esc([r.admin1,r.country].filter(Boolean).join("، "))}</span></button>`).join(""):(loc?"":`<p class="muted sm">${esc(L("No results","لا توجد نتائج"))}</p>`))}
+    catch(e){b.innerHTML=loc+`<p class="muted sm">${esc(L("City search needs internet. Pick from the quick list below.","البحث عن المدن يحتاج إنترنت. اختر من القائمة السريعة بالأسفل."))}</p>`}},350)}
+
+function xSalDraw(){
+  const o=X2.loc,tz=X2.tz,b=qibla(o.la,o.ln),km=Math.round(slKm(o.la,o.ln,21.4225,39.8262)),now=new Date(),s=SET();
+  const MN={1:"جامعة العلوم الإسلامية – كراتشي",2:"أمريكا الشمالية (ISNA)",3:"رابطة العالم الإسلامي",4:"أم القرى",5:"الهيئة المصرية العامة للمساحة",13:"رئاسة الشؤون الدينية التركية"};
+  let ds="",hj="";try{ds=new Intl.DateTimeFormat(S.lang==="ar"?"ar-EG":"en-GB",{timeZone:tz,weekday:"long",day:"numeric",month:"long"}).format(now);hj=new Intl.DateTimeFormat(S.lang==="ar"?"ar-u-ca-islamic-umalqura":"en-u-ca-islamic-umalqura",{timeZone:tz,day:"numeric",month:"long",year:"numeric"}).format(new Date(+now+s.hij*864e5))}catch(e){}
+  const rise=slTm(X2.t[1],tz),set=slTm(X2.t[4],tz),nm=o.name||L("Your location","موقعك الحالي");
+  xe("x-sal",(X2.pick?slPick():"")+
+  `<div class="sl-hero" id="sl-hero" data-ph="night">
+    <div class="sl-top"><button class="sl-pill" data-y="lop" aria-label="${esc(L("Change location","تغيير المكان"))}">${o.mode==="gps"?"📡":"📍"} <b id="sl-nm">${esc(nm)}</b> <span aria-hidden="true">▾</span></button><span class="sl-date">${esc(ds)}${hj?` · ${esc(hj)}`:""}</span></div>
+    <div class="sl-mid"><div class="sl-now" id="sl-cur"></div><div class="sl-lbl">${esc(L("Next prayer","الصلاة القادمة"))}</div><div class="sl-next" id="sl-nn">—</div><div class="sl-cd" id="sl-cd">--:--:--</div><div class="sl-at" id="sl-at"></div></div>
+    <div class="sl-bar"><i id="sl-bar"></i></div>
+    <div dir="ltr"><svg class="sl-arc" viewBox="0 0 300 108" aria-hidden="true"><path d="M20 95 A130 80 0 0 1 280 95" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-dasharray="2 7" stroke-linecap="round"/><line x1="8" y1="95" x2="292" y2="95" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/><circle id="sl-sun" r="10" cx="20" cy="95" fill="#FFD25E" stroke="rgba(255,255,255,.7)" stroke-width="3"/></svg>
+    <div class="sl-sr"><span>🌅 ${esc(L("Sunrise","الشروق"))} <b>${esc(rise.hm+" "+rise.ap)}</b></span><span><b>${esc(set.hm+" "+set.ap)}</b> ${esc(L("Sunset","الغروب"))} 🌇</span></div></div>
+  </div>
+  <div class="sl-grid">${X2.t.map((x,i)=>{const tm=slTm(x,tz);return `<div class="sl-p${i===1?" sun":""}" id="x-p${i}"><span class="ico">${pico(i)}</span><div class="grow"><div class="nm">${esc(S.lang==="ar"?PA[i]:PE[i])}</div>${i===1?`<div class="muted sm">${esc(L("Not a prayer","ليست صلاة"))}</div>`:""}</div><div class="tm" dir="ltr"><b>${esc(tm.hm)}</b><small>${esc(tm.ap)}</small></div><span class="sl-badge" id="sl-b${i}" hidden></span></div>`}).join("")}</div>
+  <div class="card sl-q" id="qcard"><svg viewBox="0 0 200 200" style="width:128px;flex:none" role="img" aria-label="Qibla compass"><circle cx="100" cy="100" r="92" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="3"/>
+    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}<g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 3"/><text x="100" y="36" text-anchor="middle" font-size="20">🕋</text></g></g><path d="M100 4 L109 20 L91 20 Z" fill="var(--primary-strong)"/><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
+    <div class="grow" style="display:grid;gap:6px"><b>${esc(L("Qibla direction","اتجاه القبلة"))}</b><div class="sl-deg">${Math.round(b)}°<small> ${esc(L("from North","من الشمال"))}</small></div><div class="muted sm">${esc(L("Distance to the Kaaba","المسافة إلى الكعبة"))}: ${km.toLocaleString(S.lang==="ar"?"ar-EG-u-nu-latn":"en-US")} ${esc(L("km","كم"))}</div><p class="muted sm" id="qinfo" style="margin:0"></p><div><button class="btn sm" data-act="qstart">🧭 ${esc(L("Start live compass","تشغيل البوصلة المباشرة"))}</button></div><p class="muted sm" id="qmsg" style="margin:0">${esc(L("Hold your phone flat; allow motion access when asked.","أمسك الهاتف أفقيًا واسمح بالحركة عند الطلب."))}</p></div></div>
+  <p class="muted sm" style="margin:0">${esc(L("Source","المصدر"))}: ${esc(X2.show.src)} · ${esc(L("Method","الطريقة"))}: ${esc(MN[X2.show.m]||X2.show.m)}${o.mode==="gps"&&o.ac?` · ±${Math.round(o.ac)}${esc(L("m","م"))}`:""} · ${o.la.toFixed(3)}, ${o.ln.toFixed(3)}<br>${esc(L("Times may differ by a few minutes from your local mosque. Change the method, Asr school and minute adjustments in","قد تختلف الأوقات دقائق عن مسجدك. غيّر طريقة الحساب ومذهب العصر وتعديل الدقائق من"))} <a href="#settings">${esc(t("settings"))}</a>.</p>`);
+  LQ.pos=[o.la,o.ln];qdraw();xSalTick();
+}
+function xSalTick(){
+  const cd=$("#sl-cd");if(!cd){clearInterval(X2.iv);return}
+  const T=X2.t,now=new Date(),tz=X2.tz,dd=ymdIn(tz,now)[2];
+  if(dd!==X2.d){X2.d=dd;xSalTimes();return}
+  let n=T.findIndex((x,i)=>i!==1&&x>now),tomorrow=false,target;
+  if(n<0){n=0;tomorrow=true;target=X2.tm}else target=T[n];
+  const prev=n===0?(tomorrow?T[5]:new Date(+T[5]-864e5)):T[n-1],df=Math.max(0,target-now);
+  cd.textContent=`${pad2(Math.floor(df/36e5))}:${pad2(Math.floor(df%36e5/6e4))}:${pad2(Math.floor(df%6e4/1e3))}`;
+  $("#sl-nn").textContent=S.lang==="ar"?PA[n]:PE[n];
+  const tm=slTm(target,tz);$("#sl-at").textContent=`${tomorrow?L("Tomorrow","غدًا")+" · ":""}${L("at","عند")} ${tm.hm} ${tm.ap}`.trim();
+  $("#sl-bar").style.width=Math.min(100,Math.max(0,(now-prev)/(target-prev)*100)).toFixed(1)+"%";
+  let c=-1;T.forEach((x,i)=>{if(x<=now)c=i});
+  $("#sl-cur").textContent=c===1?L("Now: after sunrise","الآن: بعد الشروق"):L("Now: ","الآن: وقت ")+(S.lang==="ar"?PA[c<0?5:c]:PE[c<0?5:c]);
+  T.forEach((x,i)=>{const e=$("#x-p"+i);if(!e)return;e.classList.toggle("next",i===n);e.classList.toggle("past",x<=now&&i!==n);const bd=$("#sl-b"+i);if(bd){bd.hidden=i!==n;bd.textContent=tomorrow?L("Tomorrow","غدًا"):L("Next","القادمة")}});
+  const ph=now<T[0]?"night":now<T[1]?"dawn":now<T[3]?"day":now<T[4]?"aft":now<T[5]?"dusk":"night",h=$("#sl-hero");if(h&&h.dataset.ph!==ph)h.dataset.ph=ph;
+  const sun=$("#sl-sun");if(sun){const day=now>=T[1]&&now<=T[4],tt=day?(now-T[1])/(T[4]-T[1]):now<T[1]?0:1;sun.setAttribute("cx",(150-130*Math.cos(Math.PI*tt)).toFixed(1));sun.setAttribute("cy",(95-80*Math.sin(Math.PI*tt)).toFixed(1));sun.setAttribute("fill",day?"#FFD25E":"#DCE6F5")}
+}
 /* ---------- tasbih ---------- */
 const DH=["سبحان الله","الحمد لله","الله أكبر","لا إله إلا الله","أستغفر الله","اللهم صل وسلم على نبينا محمد","لا حول ولا قوة إلا بالله","سبحان الله وبحمده سبحان الله العظيم"];
 const TS=Object.assign({i:0,n:0,tot:0,st:"beads",goal:33},XS.g("tas",{}));
@@ -786,17 +934,63 @@ if(TS.st==="ring"){const r=95,L_=2*Math.PI*r;return`<svg viewBox="0 0 240 240" s
 const rows=Math.ceil(P/11);return`<svg viewBox="0 0 260 ${rows*34+60}" style="width:min(88vw,340px)">${Array.from({length:P},(_,i)=>{const r=Math.floor(i/11),x=20+(i%11)*22,y=22+r*34;return`<line x1="${x-22}" y1="${y}" x2="${x}" y2="${y}" stroke="var(--line)" stroke-width="2"/><circle class="bead" cx="${x}" cy="${y}" r="9" fill="${i<Math.round(n/g*P)?"var(--primary)":"var(--surface-2)"}" stroke="${c}" stroke-width="2"/>`}).join("")}<text x="130" y="${rows*34+30}" text-anchor="middle" font-size="40" font-weight="700" fill="var(--fg)">${TS.n}</text></svg>`}
 const xTas=()=>`<div class="card tapbtn" data-y="tap"><p class="ar" style="font-size:24px;margin:0 0 6px">${esc(DH[TS.i])}</p>${xTasSvg()}<p class="muted sm" style="margin:6px 0 0">${esc(L("Tap anywhere on this card","المس البطاقة للتسبيح"))} · ${esc(L("Total","الإجمالي"))}: ${TS.tot}</p></div>`;
 V.tasbih=()=>head(t("tasbih"),L("Choose a dhikr, a goal and a style","اختر الذكر والعدد والشكل"))+`<select id="x-dh">${DH.map((d,i)=>`<option value="${i}" ${TS.i===i?"selected":""}>${esc(d)}</option>`).join("")}</select>`+chips([["beads","🔵 حبات"],["ring","⭕ حلقة"],["thread","📿 خيط"]],TS.st,"tst")+chips([["33","33"],["99","99"],["100","100"],["1000","1000"]],String(TS.goal),"tgl")+`<div id="x-tas">${xTas()}</div><div class="row"><button class="btn ghost sm" data-y="tre">${esc(L("Reset","تصفير"))}</button></div>`;
+/* ---------- live gold & silver prices (auto, refreshed daily) ---------- */
+const ZC=[["EGP","جنيه مصري"],["SAR","ريال سعودي"],["AED","درهم إماراتي"],["KWD","دينار كويتي"],["QAR","ريال قطري"],["BHD","دينار بحريني"],["OMR","ريال عماني"],["JOD","دينار أردني"],["USD","دولار أمريكي"],["EUR","يورو"],["GBP","جنيه إسترليني"],["MAD","درهم مغربي"],["DZD","دينار جزائري"],["TND","دينار تونسي"],["IQD","دينار عراقي"],["TRY","ليرة تركية"],["PKR","روبية باكستانية"],["MYR","رينغيت ماليزي"],["IDR","روبية إندونيسية"]];
+const ZTZ={"Africa/Cairo":"EGP","Asia/Riyadh":"SAR","Asia/Dubai":"AED","Asia/Kuwait":"KWD","Asia/Qatar":"QAR","Asia/Bahrain":"BHD","Asia/Muscat":"OMR","Asia/Amman":"JOD","Africa/Casablanca":"MAD","Africa/Algiers":"DZD","Africa/Tunis":"TND","Asia/Baghdad":"IQD","Europe/Istanbul":"TRY","Asia/Karachi":"PKR","Asia/Kuala_Lumpur":"MYR","Asia/Jakarta":"IDR","Europe/London":"GBP"};
+const OZ=31.1034768,PXS={m24:false,ms:false,busy:false};
+const pxDay=()=>{const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())};
+const pxCur=()=>{const c=XS.g("zcur",null);if(c&&ZC.some(z=>z[0]===c))return c;let tz="";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}return ZTZ[tz]||"EGP"};
+const pxJ=async u=>{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),9000);try{const r=await fetch(u,{signal:ac.signal,cache:"no-store"});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(to)}};
+const pxOz=v=>{v=+v;return v>0&&v<1?1/v:v};
+const pxRates=get=>{const o={};ZC.forEach(([c])=>{const v=+get(c);if(v>0)o[c]=v});return o};
+async function pxFawaz(base){const d=await pxJ(base),u=d.usd,g=pxOz(u.xau),s=pxOz(u.xag);if(!(g>300&&g<30000&&s>3&&s<1000))throw new Error("bad");return{goldOz:g,silverOz:s,rates:pxRates(c=>c==="USD"?1:u[c.toLowerCase()]),date:d.date||pxDay(),src:"currency-api"}}
+async function pxGoldApi(){const [a,b,r]=await Promise.all([pxJ("https://api.gold-api.com/price/XAU"),pxJ("https://api.gold-api.com/price/XAG"),pxJ("https://open.er-api.com/v6/latest/USD")]),g=+a.price,s=+b.price;if(!(g>300&&g<30000&&s>3&&s<1000))throw new Error("bad");return{goldOz:g,silverOz:s,rates:pxRates(c=>c==="USD"?1:r.rates[c]),date:String(a.updatedAt||"").slice(0,10)||pxDay(),src:"gold-api + open.er-api"}}
+async function pxLoad(force){
+  let c=XS.g("px",null);
+  if(c&&!force&&c.day===pxDay()&&c.rates&&c.goldOz)return c;
+  for(const f of [()=>pxFawaz("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"),()=>pxFawaz("https://latest.currency-api.pages.dev/v1/currencies/usd.json"),pxGoldApi]){
+    try{const r=await f();const n=Object.assign({day:pxDay(),ts:Date.now()},r);XS.s("px",n);return n}catch(e){}}
+  return c?Object.assign({},c,{stale:true}):null}
+const pxGram=(c,cur,m)=>c&&c.rates&&c.rates[cur]?(m==="g"?c.goldOz:c.silverOz)/OZ*c.rates[cur]:0;
+const pxFmt=v=>v>=100?nf(Math.round(v*100)/100):nf(Math.round(v*1000)/1000);
+function pxDraw(c,err){
+  const cur=pxCur(),box=$("#z-pxb");if(!box)return;
+  const cn=(ZC.find(z=>z[0]===cur)||[cur,cur])[1];
+  if(!c||!c.rates||!c.rates[cur]){box.innerHTML=`<p class="zk-warn">${err?"تعذر جلب الأسعار الآن. اكتب سعر الجرام يدويًا في الخانتين بالأسفل، وسيُعاد المحاولة تلقائيًا عند فتح الصفحة.":"جارٍ تحميل أسعار الذهب والفضة…"}</p>`;return}
+  const g24=pxGram(c,cur,"g"),sv=pxGram(c,cur,"s"),tile=(cl,l,v,sub)=>`<div class="zk-t ${cl}"><small>${l}</small><b>${pxFmt(v)}</b><small>${esc(cur)}${sub?" · "+sub:""}</small></div>`;
+  box.innerHTML=`<div class="zk-grid">${tile("g","ذهب عيار 24",g24,"للجرام")}${tile("g","ذهب عيار 21",g24*21/24,"للجرام")}${tile("g","ذهب عيار 18",g24*18/24,"للجرام")}${tile("g","الجنيه الذهب (8 جم · 21)",g24*21/24*8,"")}${tile("s","فضة (جرام)",sv,"")}</div>
+  <div class="zk-nis"><span>نصاب الذهب (85 جم): <b>${pxFmt(g24*85)}</b></span><span>نصاب الفضة (595 جم): <b>${pxFmt(sv*595)}</b></span></div>
+  <p class="zk-st">${c.stale?`⚠️ تعذر التحديث الآن، هذه آخر أسعار محفوظة بتاريخ <b>${esc(c.date||c.day)}</b>.`:`✅ تحديث <b>${esc(c.date||c.day)}</b> · تتحدّث تلقائيًا كل يوم`} · العملة: ${esc(cn)}</p>
+  <p class="zk-st" style="margin-top:0">الأسعار عالمية (سعر الأونصة) محوّلة بسعر الصرف، فقد تختلف قليلًا عن سعر الصاغة في بلدك بسبب المصنعية وفروق السوق. يمكنك تعديل السعر يدويًا في الخانتين.</p>`;
+  const f24=$("#z-p24"),fs=$("#z-ps");
+  if(f24&&!PXS.m24)f24.value=(Math.round(g24*100)/100)||"";
+  if(fs&&!PXS.ms)fs.value=(Math.round(sv*100)/100)||"";
+  xZakat(true)}
+async function xPxInit(force){
+  if(!$("#z-pxb")||PXS.busy)return;const cur=pxCur(),sel=$("#z-cur");if(sel&&sel.value!==cur)sel.value=cur;
+  const c0=XS.g("px",null);
+  if(c0&&!force&&c0.day===pxDay()){pxDraw(c0);return}
+  if(c0)pxDraw(Object.assign({},c0,{stale:true}));else pxDraw(null,false);
+  PXS.busy=true;const btn=$('[data-y="zpx"]');if(btn)btn.disabled=true;
+  try{const c=await pxLoad(force);pxDraw(c,!c)}finally{PXS.busy=false;const b=$('[data-y="zpx"]');if(b)b.disabled=false}}
+/* refresh once a day while the page stays open */
+setInterval(()=>{if($("#z-pxb")){const c=XS.g("px",null);if(!c||c.day!==pxDay())xPxInit()}},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&$("#z-pxb")){const c=XS.g("px",null);if(!c||c.day!==pxDay())xPxInit()}});
+
 /* ---------- zakat ---------- */
 const nf=v=>(+v||0).toLocaleString("en-US",{maximumFractionDigits:2});
-V.zakat=()=>{const f=(id,l,ph)=>`<label class="sm muted">${esc(l)}<input type="number" inputmode="decimal" id="${id}" placeholder="${ph||0}" min="0"></label>`;
-return head(t("zakat"),L("Money, gold, silver, trade goods, crops and livestock","النقود والذهب والفضة وعروض التجارة والزروع والأنعام"))+`<div class="card" style="display:grid;gap:8px"><b>١) زكاة المال</b>${f("z-p24","سعر جرام الذهب عيار 24 اليوم")}${f("z-ps","سعر جرام الفضة اليوم")}${f("z-g24","ذهب عيار 24 (جرام)")}${f("z-g21","ذهب عيار 21 (جرام)")}${f("z-g18","ذهب عيار 18 (جرام)")}${f("z-sv","فضة (جرام)")}${f("z-cash","النقد في اليد والبنك والاستثمارات")}${f("z-tr","قيمة عروض التجارة (البضاعة + الأرباح)")}${f("z-rc","ديون مرجوّة السداد لك")}${f("z-db","ديون حالّة عليك")}<label class="sm muted">النصاب<select id="z-ns"><option value="g">الذهب (85 جم عيار 24)</option><option value="s">الفضة (595 جم)</option></select></label><label class="sm muted"><input type="checkbox" id="z-h" checked style="width:auto"> تم مرور سنة هجرية كاملة على المال</label><button class="btn" data-y="zk">احسب</button><div id="z-out"></div></div>
+V.zakat=()=>{setTimeout(()=>xPxInit(false));const f=(id,l,ph)=>`<label class="sm muted">${esc(l)}<input type="number" inputmode="decimal" id="${id}" placeholder="${ph||0}" min="0"></label>`,cur=pxCur();
+return head(t("zakat"),L("Money, gold, silver, trade goods, crops and livestock","النقود والذهب والفضة وعروض التجارة والزروع والأنعام"))+`
+<div class="card zk-px" id="z-px"><div class="row sb"><b>💰 أسعار الذهب والفضة اليوم</b><select id="z-cur" aria-label="العملة" style="width:auto">${ZC.map(([c,n])=>`<option value="${c}" ${c===cur?"selected":""}>${c} — ${n}</option>`).join("")}</select></div><div id="z-pxb"></div><div class="row"><button class="btn ghost sm" data-y="zpx">🔄 تحديث الأسعار الآن</button></div></div>
+<div class="card" style="display:grid;gap:8px"><b>١) زكاة المال</b><p class="muted sm" style="margin:0">السعران يُملآن تلقائيًا من أسعار اليوم، ويمكنك تعديلهما.</p>${f("z-p24","سعر جرام الذهب عيار 24 اليوم (تلقائي)")}${f("z-ps","سعر جرام الفضة اليوم (تلقائي)")}${f("z-g24","ذهب عيار 24 (جرام)")}${f("z-g21","ذهب عيار 21 (جرام)")}${f("z-g18","ذهب عيار 18 (جرام)")}${f("z-sv","فضة (جرام)")}${f("z-cash","النقد في اليد والبنك والاستثمارات")}${f("z-tr","قيمة عروض التجارة (البضاعة + الأرباح)")}${f("z-rc","ديون مرجوّة السداد لك")}${f("z-db","ديون حالّة عليك")}<label class="sm muted">النصاب<select id="z-ns"><option value="g">الذهب (85 جم عيار 24)</option><option value="s">الفضة (595 جم)</option></select></label><label class="sm muted"><input type="checkbox" id="z-h" checked style="width:auto"> تم مرور سنة هجرية كاملة على المال</label><button class="btn" data-y="zk">احسب</button><div id="z-out"></div></div>
 <div class="card" style="display:grid;gap:8px"><b>٢) زكاة الزروع والثمار</b>${f("c-kg","المحصول بالكيلو جرام")}<label class="sm muted">السقي<select id="c-ty"><option value="10">بماء المطر والأنهار (10%)</option><option value="5">بآلة وتكلفة (5%)</option><option value="7.5">مشترك (7.5%)</option></select></label><button class="btn" data-y="zc">احسب</button><div id="c-out"></div></div>
 <div class="card" style="display:grid;gap:8px"><b>٣) زكاة الأنعام (السائمة)</b><label class="sm muted">النوع<select id="a-ty"><option value="sheep">غنم وماعز</option><option value="cow">بقر وجاموس</option><option value="camel">إبل</option></select></label>${f("a-n","العدد")}<button class="btn" data-y="za">احسب</button><div id="a-out"></div></div>
 <div class="card"><b>شروط وأحكام</b><p style="line-height:1.9;margin:6px 0 0">شروط وجوبها: الإسلام، والحرية، وملك النصاب ملكًا تامًا، وفضله عن الحوائج الأصلية، وحولان الحول (سنة هجرية) إلا الزروع فتجب عند الحصاد. نصاب الذهب 85 جرامًا من عيار 24، ونصاب الفضة 595 جرامًا، والواجب ربع العشر (2.5%). يُضم الذهب والفضة والنقد وعروض التجارة بعضها إلى بعض، وتُخصم الديون الحالّة. لا زكاة في بيتك الذي تسكنه ولا سيارتك الخاصة ولا ثيابك ولا أثاثك. المال المرصود للادخار وعروض التجارة تجب فيها الزكاة بقيمتها يوم الإخراج. المستحقون ثمانية: الفقراء والمساكين والعاملون عليها والمؤلفة قلوبهم وفي الرقاب والغارمون وفي سبيل الله وابن السبيل. ولا تُعطى لأصولك ولا فروعك ولا زوجتك. العلماء مختلفون في النصاب المعتمد (الذهب أم الفضة)، والأحوط للفقراء الفضة، ودور الإفتاء تُعلن النصاب المعتمد كل فترة فراجعها.</p></div>`};
-function xZakat(){const v=id=>+($("#"+id).value)||0,p24=v("z-p24"),ps=v("z-ps"),gold=v("z-g24")+v("z-g21")*21/24+v("z-g18")*18/24,out=$("#z-out");
-const w=gold*p24+v("z-sv")*ps+v("z-cash")+v("z-tr")+v("z-rc")-v("z-db"),ns=$("#z-ns").value==="g"?85*p24:595*ps;
+function xZakat(live){const v=id=>+($("#"+id).value)||0,p24=v("z-p24"),ps=v("z-ps"),gold=v("z-g24")+v("z-g21")*21/24+v("z-g18")*18/24,out=$("#z-out");if(!out)return;
+const w=gold*p24+v("z-sv")*ps+v("z-cash")+v("z-tr")+v("z-rc")-v("z-db"),ns=$("#z-ns").value==="g"?85*p24:595*ps,cur=pxCur();
+if(live&&!(v("z-g24")||v("z-g21")||v("z-g18")||v("z-sv")||v("z-cash")||v("z-tr")||v("z-rc")||v("z-db"))){out.innerHTML="";return}
 if(!p24&&$("#z-ns").value==="g"||!ps&&$("#z-ns").value==="s"){out.innerHTML=`<p class="muted">أدخل سعر الجرام لتحديد النصاب.</p>`;return}
-const ok=w>=ns,z=ok&&$("#z-h").checked?w*0.025:0;out.innerHTML=`<div class="card flat" style="line-height:2">صافي المال الخاضع للزكاة: <b>${nf(w)}</b><br>النصاب: <b>${nf(ns)}</b><br>${!ok?"لم يبلغ النصاب فلا زكاة عليك.":!$("#z-h").checked?"بلغ النصاب لكن لم يحُل الحول بعد.":`الزكاة الواجبة (2.5%): <b style="font-size:22px;color:var(--primary)">${nf(z)}</b>`}</div>`}
+const ok=w>=ns,z=ok&&$("#z-h").checked?w*0.025:0;out.innerHTML=`<div class="card flat" style="line-height:2">صافي المال الخاضع للزكاة: <b>${nf(w)} ${esc(cur)}</b><br>النصاب: <b>${nf(ns)} ${esc(cur)}</b><br>${!ok?"لم يبلغ النصاب فلا زكاة عليك.":!$("#z-h").checked?"بلغ النصاب لكن لم يحُل الحول بعد.":`الزكاة الواجبة (2.5%): <b style="font-size:22px;color:var(--primary)">${nf(z)} ${esc(cur)}</b>`}</div>`}
 function xCrop(){const kg=+$("#c-kg").value||0,r=+$("#c-ty").value,ns=653,ok=kg>=ns;$("#c-out").innerHTML=`<div class="card flat">النصاب نحو ${ns} كجم. ${ok?`الواجب: <b>${nf(kg*r/100)}</b> كجم (${r}%)`:"لم يبلغ النصاب."}</div>`}
 function xAn(){const n=+$("#a-n").value||0,k=$("#a-ty").value;let r="";
 if(k==="sheep")r=n<40?"لا زكاة (النصاب 40)":n<=120?"شاة واحدة":n<=200?"شاتان":n<=399?"ثلاث شياه":Math.floor(n/100)+" شياه";
@@ -818,40 +1012,83 @@ V.live=()=>head(t("live"),L("Opens the live results on YouTube","تفتح نتا
 /* ---------- games & prophets ---------- */
 const PR=[["آدم","أبو البشر، خلقه الله بيده وأسجد له الملائكة وأسكنه الجنة ثم أهبطه إلى الأرض."],["إدريس","نبي صدّيق رفعه الله مكانًا عليًا."],["نوح","دعا قومه 950 سنة وبنى السفينة ونجاه الله والمؤمنين من الطوفان."],["هود","أُرسل إلى عاد فكذبوه فأهلكهم الله بريح صرصر."],["صالح","أُرسل إلى ثمود وجاءهم بناقة الله فعقروها فأخذتهم الصيحة."],["إبراهيم","خليل الرحمن حطم الأصنام ونجا من النار وبنى الكعبة مع إسماعيل."],["لوط","أُرسل إلى قوم سدوم فنجاه الله وأهله إلا امرأته."],["إسماعيل","ابن إبراهيم الذبيح، ساعد أباه في بناء الكعبة."],["إسحاق","ابن إبراهيم من سارة وأبو يعقوب."],["يعقوب","أبو يوسف صبر على فقده حتى رده الله عليه."],["يوسف","أُلقي في الجب وبيع عبدًا ثم صار عزيز مصر وعفا عن إخوته."],["أيوب","صبر على المرض والبلاء فشفاه الله."],["شعيب","أُرسل إلى مدين ودعاهم إلى العدل في الميزان."],["موسى","كليم الله، نجّاه من فرعون وشق له البحر وأنزل عليه التوراة."],["هارون","أخو موسى ووزيره."],["ذو الكفل","من الصابرين الصالحين ذكره الله في القرآن."],["داود","آتاه الله الزبور وألان له الحديد وقتل جالوت."],["سليمان","ملك نبي سخر الله له الريح والجن والطير وفهّمه منطق الطير."],["إلياس","دعا قومه إلى ترك عبادة بعل."],["اليسع","نبي من الأخيار ذكره الله."],["يونس","ذهب مغاضبًا فابتلعه الحوت فسبّح في الظلمات فنجاه الله."],["زكريا","كفل مريم ودعا ربه فرزقه يحيى على الكبر."],["يحيى","نبي آتاه الله الحكم صبيًا وكان برًا تقيًا."],["عيسى","وُلد من غير أب، أيده الله بالمعجزات وأنزل عليه الإنجيل ورفعه إليه."],["محمد ﷺ","خاتم الأنبياء والمرسلين، أُرسل رحمة للعالمين وأنزل عليه القرآن."]];
 const NM=PR.map(p=>p[0]).filter(x=>!x.includes("ﷺ")),PQ=[["من أبو البشر؟","آدم"],["من النبي الذي بنى الكعبة مع ابنه إسماعيل؟","إبراهيم"],["من النبي الذي ابتلعه الحوت؟","يونس"],["من النبي الذي أُلقي في الجب؟","يوسف"],["من النبي الذي كلّمه الله تكليمًا؟","موسى"],["من النبي الذي صنع السفينة؟","نوح"],["من النبي الذي ألان الله له الحديد؟","داود"],["من النبي الذي سخّر الله له الريح والجن؟","سليمان"],["من النبي الذي خلقه الله من غير أب؟","عيسى"],["من النبي الصابر على المرض؟","أيوب"],["من النبي الذي أُرسل إلى ثمود؟","صالح"],["من النبي الذي أُرسل إلى عاد؟","هود"]];
-const GM={m:"",q:null,sc:0,n:0,done:false};
+const GM={m:"",q:null,sc:0,n:0,done:false,seq:0};
 const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
-V.games=()=>{setTimeout(xGame);return head(t("games"),L("Learn while you play","تعلّم وأنت تلعب"))+chips([["","قصص الأنبياء"],["ayah","أكمل الآية"],["surah","من أي سورة؟"],["pq","اختبار الأنبياء"]],GM.m,"gm")+`<div id="x-g"></div>`};
-async function xGame(){if(!$("#x-g"))return;GM.done=false;
-if(!GM.m){xe("x-g",PR.map(([n,s])=>`<div class="card row sb"><div class="grow"><b>${esc(n)}</b><p class="muted sm" style="margin:2px 0 0">${esc(s)}</p></div><a class="chip" href="https://www.youtube.com/results?search_query=${encodeURIComponent("قصة نبي الله "+n.replace(" ﷺ","")+" للأطفال")}" target="_blank" rel="noopener noreferrer">▶ فيديو</a></div>`).join("")+`<p class="muted sm">الفيديوهات تفتح نتائج يوتيوب لقصة كل نبي.</p>`);return}
-try{let q;if(GM.m==="pq"){const [t_,a]=PQ[Math.floor(Math.random()*PQ.length)];q={t:t_,a,o:shuf([a].concat(shuf(NM.filter(x=>x!==a)).slice(0,3)))}}
-else{const s=78+Math.floor(Math.random()*36),A=(await xj(`https://api.alquran.cloud/v1/surah/${s}/quran-uthmani`)).data.ayahs.filter(a=>a.numberInSurah>1);const ok=A.filter(a=>a.text.split(" ").length>=5);const a=(ok.length?ok:A)[Math.floor(Math.random()*(ok.length||A.length))];
-if(GM.m==="ayah"){const w=a.text.split(" "),ans=w.pop(),pool=[...new Set(A.flatMap(x=>x.text.split(" ")))].filter(x=>x!==ans&&x!==""),op=shuf(pool).slice(0,3);q={t:"أكمل: "+w.join(" ")+" …",a:ans,o:shuf([ans].concat(op)),ar:1}}
-else{const ans=AR[s-1],pool=AR.slice(77).filter(x=>x!==ans);q={t:a.text,a:ans,o:shuf([ans].concat(shuf(pool).slice(0,3))),ar:1}}}
-GM.q=q;xe("x-g",`<div class="card"><p class="muted sm">${esc(L("Score","النقاط"))}: ${GM.sc} · ${GM.n}</p><p class="${q.ar?"xq":""}" style="font-size:${q.ar?"":"18px"};font-weight:${q.ar?"400":"700"}">${esc(q.t)}</p>${q.o.map((o,i)=>`<button class="btn ghost opt" data-y="ans" data-v="${i}">${esc(o)}</button>`).join("")}<div id="x-gn"></div></div>`)}catch(e){xerr("x-g",e.message)}}
+const pick1=a=>a[Math.floor(Math.random()*a.length)];
+/* offline bank so the Quran games still work without internet */
+const GFB=[[112,["قُلْ هُوَ ٱللَّهُ أَحَدٌ","ٱللَّهُ ٱلصَّمَدُ","لَمْ يَلِدْ وَلَمْ يُولَدْ","وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ"]],[113,["قُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ","مِن شَرِّ مَا خَلَقَ","وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ","وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِى ٱلْعُقَدِ","وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ"]],[114,["قُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ","مَلِكِ ٱلنَّاسِ","إِلَٰهِ ٱلنَّاسِ","مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ","ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ","مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ"]],[108,["إِنَّآ أَعْطَيْنَٰكَ ٱلْكَوْثَرَ","فَصَلِّ لِرَبِّكَ وَٱنْحَرْ","إِنَّ شَانِئَكَ هُوَ ٱلْأَبْتَرُ"]],[103,["وَٱلْعَصْرِ","إِنَّ ٱلْإِنسَٰنَ لَفِى خُسْرٍ","إِلَّا ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّٰلِحَٰتِ وَتَوَاصَوْا۟ بِٱلْحَقِّ وَتَوَاصَوْا۟ بِٱلصَّبْرِ"]],[110,["إِذَا جَآءَ نَصْرُ ٱللَّهِ وَٱلْفَتْحُ","وَرَأَيْتَ ٱلنَّاسَ يَدْخُلُونَ فِى دِينِ ٱللَّهِ أَفْوَاجًا","فَسَبِّحْ بِحَمْدِ رَبِّكَ وَٱسْتَغْفِرْهُ إِنَّهُۥ كَانَ تَوَّابًۢا"]],[106,["لِإِيلَٰفِ قُرَيْشٍ","إِۦلَٰفِهِمْ رِحْلَةَ ٱلشِّتَآءِ وَٱلصَّيْفِ","فَلْيَعْبُدُوا۟ رَبَّ هَٰذَا ٱلْبَيْتِ","ٱلَّذِىٓ أَطْعَمَهُم مِّن جُوعٍ وَءَامَنَهُم مِّنْ خَوْفٍۭ"]],[94,["فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا","إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا"]],[93,["مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ","وَلَلْـَٔاخِرَةُ خَيْرٌ لَّكَ مِنَ ٱلْأُولَىٰ"]]];
+/* general Islamic questions for kids (offline) */
+const GQ=[["كم عدد أركان الإسلام؟","خمسة",["ثلاثة","ستة","سبعة"]],["كم عدد الصلوات المفروضة في اليوم والليلة؟","خمس صلوات",["ثلاث صلوات","أربع صلوات","ست صلوات"]],["ما أول ركن من أركان الإسلام؟","الشهادتان",["الصلاة","الزكاة","الصيام"]],["في أي شهر يصوم المسلمون؟","رمضان",["شعبان","رجب","محرم"]],["ما اسم الكتاب الذي أنزله الله على نبينا محمد ﷺ؟","القرآن الكريم",["التوراة","الإنجيل","الزبور"]],["إلى أي جهة نتجه في الصلاة؟","الكعبة المشرفة",["المسجد الأقصى","جبل عرفات","غار حراء"]],["ما أول سورة في المصحف؟","الفاتحة",["البقرة","الإخلاص","الناس"]],["ما أطول سورة في القرآن؟","البقرة",["آل عمران","النساء","الكهف"]],["ما آخر سورة في المصحف؟","الناس",["الفلق","الإخلاص","الكوثر"]],["إلى أي مدينة هاجر النبي ﷺ؟","المدينة المنورة",["الطائف","القدس","دمشق"]],["كم عدد سور القرآن الكريم؟","114",["100","120","99"]],["ما اسم الملك الذي نزل بالوحي على النبي ﷺ؟","جبريل عليه السلام",["ميكائيل عليه السلام","إسرافيل عليه السلام","مالك"]],["ماذا نقول قبل الأكل؟","بسم الله",["الحمد لله","سبحان الله","الله أكبر"]],["ماذا نقول بعد الانتهاء من الأكل؟","الحمد لله",["بسم الله","لا إله إلا الله","أستغفر الله"]],["ما العيد الذي يأتي بعد شهر رمضان؟","عيد الفطر",["عيد الأضحى","يوم عرفة","عاشوراء"]],["كم ركعة في فرض صلاة الفجر؟","ركعتان",["ثلاث","أربع","خمس"]],["كم ركعة في فرض صلاة المغرب؟","ثلاث ركعات",["ركعتان","أربع ركعات","خمس ركعات"]],["في أي مدينة وُلد النبي ﷺ؟","مكة المكرمة",["المدينة المنورة","الطائف","جدة"]],["ما اسم والدة النبي ﷺ؟","آمنة بنت وهب",["خديجة بنت خويلد","عائشة","فاطمة"]],["من هي أول زوجات النبي ﷺ؟","خديجة بنت خويلد",["عائشة","حفصة","سودة"]]];
+V.games=()=>{setTimeout(xGame);return head(t("games"),L("Learn while you play","تعلّم وأنت تلعب"))+chips([["","قصص الأنبياء"],["gq","أسئلة إسلامية"],["pq","اختبار الأنبياء"],["ayah","أكمل الآية"],["surah","من أي سورة؟"]],GM.m,"gm")+`<div id="x-g"></div>`};
+const gWords=a=>a.split(/\s+/).filter(w=>/[ء-غف-يٱ]/.test(w));
+async function gAyah(){let s,A,on=true;
+  try{s=78+Math.floor(Math.random()*37);const j=await xj(`https://api.alquran.cloud/v1/surah/${s}/quran-uthmani`);A=j.data.ayahs.filter(a=>a.numberInSurah>1).map(a=>a.text);if(!A.length)throw new Error("empty")}
+  catch(e){on=false;const f=pick1(GFB);s=f[0];A=f[1]}
+  const good=A.filter(a=>gWords(a).length>=4),txt=pick1(good.length?good:A);return{s,A,txt,on}}
+async function xGame(){if(!$("#x-g"))return;GM.done=false;const my=++GM.seq;
+  if(!GM.m){xe("x-g",PR.map(([n,s])=>`<div class="card row sb"><div class="grow"><b>${esc(n)}</b><p class="muted sm" style="margin:2px 0 0">${esc(s)}</p></div><a class="chip" href="https://www.youtube.com/results?search_query=${encodeURIComponent("قصة نبي الله "+n.replace(" ﷺ","")+" للأطفال")}" target="_blank" rel="noopener noreferrer">▶ فيديو</a></div>`).join("")+`<p class="muted sm">الفيديوهات تفتح نتائج يوتيوب لقصة كل نبي.</p>`);return}
+  try{let q;
+    if(GM.m==="pq"){const [t_,a]=pick1(PQ);q={t:t_,a,o:shuf([a].concat(shuf(NM.filter(x=>x!==a)).slice(0,3)))}}
+    else if(GM.m==="gq"){const [t_,a,w]=pick1(GQ);q={t:t_,a,o:shuf([a].concat(w))}}
+    else{xe("x-g",`<div class="card flat">جارٍ تجهيز السؤال…</div>`);const g=await gAyah();if(my!==GM.seq)return;
+      if(GM.m==="ayah"){const w=gWords(g.txt),ans=w.pop(),pool=[...new Set(g.A.concat(GFB.flatMap(x=>x[1])).flatMap(gWords))].filter(x=>x!==ans);
+        let op=shuf(pool.filter(x=>Math.abs(x.length-ans.length)<=3)).slice(0,3);if(op.length<3)op=shuf(pool).slice(0,3);
+        q={t:"أكمل: "+w.join(" ")+" …",a:ans,o:shuf([ans].concat(op)),ar:1,full:g.txt}}
+      else{const ans=AR[g.s-1],pool=AR.slice(77).filter(x=>x!==ans);q={t:g.txt,a:ans,o:shuf([ans].concat(shuf(pool).slice(0,3))),ar:1}}}
+    if(my!==GM.seq)return;
+    GM.q=q;xe("x-g",`<div class="card"><p class="muted sm">${esc(L("Score","النقاط"))}: ${GM.sc} / ${GM.n}</p><p class="${q.ar?"xq":""}" style="font-size:${q.ar?"":"18px"};font-weight:${q.ar?"400":"700"}">${esc(q.t)}</p>${q.o.map((o,i)=>`<button class="btn ghost opt" data-y="ans" data-v="${i}">${esc(o)}</button>`).join("")}<div id="x-gn"></div></div>`)}
+  catch(e){xerr("x-g",e.message)}}
 /* ---------- settings ---------- */
 V.settings=()=>{const s=SET(),sw=(k,l)=>`<button class="chip" data-y="tg" data-v="${k}" aria-pressed="${!!s[k]}">${esc(l)}</button>`;
 return head(t("settings"),"")+`<div class="card" style="display:grid;gap:10px"><b>حجم الخط</b><input type="range" id="x-fs" min="0.85" max="1.5" step="0.05" value="${s.fs}"><b>حجم خط القرآن</b><input type="range" id="x-qs" min="0.8" max="2" step="0.1" value="${s.qs}"><p class="ar" style="font-size:22px;margin:0">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p></div>
 <div class="card" style="display:grid;gap:10px"><b>الشكل</b><div class="row">${[["auto","تلقائي"],["light","فاتح"],["dark","داكن"],["emerald","زمردي"]].map(([k,v])=>`<button class="chip" data-y="th" data-v="${k}" aria-pressed="${S.theme===k}">${v}</button>`).join("")}<button class="chip" data-y="lg">${S.lang==="ar"?"English":"العربية"}</button></div></div>
-<div class="card" style="display:grid;gap:10px"><b>الصلاة</b><label class="sm muted">طريقة الحساب<select id="x-me">${[["auto","تلقائي حسب بلدك"],["5","الهيئة المصرية"],["4","أم القرى"],["3","رابطة العالم الإسلامي"],["2","أمريكا الشمالية"]].map(([k,v])=>`<option value="${k}" ${String(s.meth)===k?"selected":""}>${v}</option>`).join("")}</select></label><div class="row">${sw("hanafi","العصر بمذهب الحنفية")}${sw("h24","نظام 24 ساعة")}</div><span class="sm muted">تعديل الدقائق لكل صلاة (احتياطًا أو تمشيًا مع مسجدك)</span><div class="row">${PA.map((n,i)=>`<label class="sm">${n}<input type="number" class="x-adj" data-i="${i}" value="${s.adj[i]}" style="width:70px"></label>`).join("")}</div><label class="sm muted">تعديل التاريخ الهجري (يوم)<select id="x-hj">${[-1,0,1].map(v=>`<option ${s.hij===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
+<div class="card" style="display:grid;gap:10px"><b>الصلاة</b><label class="sm muted">طريقة الحساب<select id="x-me">${[["auto","تلقائي حسب بلدك"],["5","الهيئة المصرية"],["4","أم القرى"],["3","رابطة العالم الإسلامي"],["2","أمريكا الشمالية"],["13","تركيا (ديانت)"],["1","كراتشي"]].map(([k,v])=>`<option value="${k}" ${String(s.meth)===k?"selected":""}>${v}</option>`).join("")}</select></label><div class="row">${sw("hanafi","العصر بمذهب الحنفية")}${sw("h24","نظام 24 ساعة")}</div><span class="sm muted">تعديل الدقائق لكل صلاة (احتياطًا أو تمشيًا مع مسجدك)</span><div class="row">${PA.map((n,i)=>`<label class="sm">${n}<input type="number" class="x-adj" data-i="${i}" value="${s.adj[i]}" style="width:70px"></label>`).join("")}</div><label class="sm muted">تعديل التاريخ الهجري (يوم)<select id="x-hj">${[-1,0,1].map(v=>`<option ${s.hij===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
+<div class="card" style="display:grid;gap:10px"><b>💬 الاقتراحات والشكاوى</b><span class="sm muted">أرسل اقتراحك أو شكواك مباشرة عبر واتساب.</span><button class="btn" data-y="fb" style="background:#25D366;color:#073B1A">إرسال اقتراح / شكوى</button></div>
 <div class="card" style="display:grid;gap:10px"><b>أخرى</b><div class="row">${sw("vib","اهتزاز السبحة")}</div><button class="btn ghost" data-y="rs">مسح كل البيانات المحفوظة</button></div>`};
 /* ---------- events ---------- */
 const sv=o=>XS.s("set",Object.assign(SET(),o));
 main.addEventListener("click",e=>{const b=e.target.closest("[data-y]");if(!b)return;const a=b.dataset.y,v=b.dataset.v;
-if(a==="retry")xSalah();else if(a==="city"){const c=CITIES[v];X2.pos=[c[0],c[1],0];xSalTimes()}
+if(a==="gps"){xSalah(true)}
+else if(a==="lop"){X2.pick=!X2.pick;X2.pmsg="";X2.t?xSalDraw():xe("x-sal",slPick())}
+else if(a==="lcl"){X2.pick=false;if(X2.t)xSalDraw()}
+else if(a==="city"){const c=SLC[+v];xSalSet({la:c[2],ln:c[3],tz:c[4],name:slN(c)})}
+else if(a==="pick"){const r=X2.res[+v];if(r)xSalSet({la:r.latitude,ln:r.longitude,tz:r.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone,name:r.name})}
+else if(a==="fb"){fbOpen()}
+else if(a==="zpx"){PXS.m24=PXS.ms=false;xPxInit(true)}
 else if(a==="tap"){TS.n++;TS.tot++;if(SET().vib&&navigator.vibrate)navigator.vibrate(TS.n%TS.goal===0?[60,40,60]:12);XS.s("tas",TS);xe("x-tas",xTas())}
 else if(a==="tre"){TS.n=0;XS.s("tas",TS);xe("x-tas",xTas())}
 else if(a==="tst"){TS.st=v;XS.s("tas",TS);rr()}else if(a==="tgl"){TS.goal=+v;TS.n=0;XS.s("tas",TS);rr()}
-else if(a==="zk")xZakat();else if(a==="zc")xCrop();else if(a==="za")xAn();
+else if(a==="zk")xZakat(false);else if(a==="zc")xCrop();else if(a==="za")xAn();
 else if(a==="gm"){GM.m=v;GM.sc=0;GM.n=0;rr()}
 else if(a==="ans"&&!GM.done){GM.done=true;const q=GM.q,ok=q.o[+v]===q.a;GM.n++;if(ok)GM.sc++;b.classList.add(ok?"ok":"bad");document.querySelectorAll(".opt").forEach(x=>{if(x.textContent===q.a)x.classList.add("ok")});$("#x-gn").innerHTML=`<button class="btn" style="margin-top:10px" data-y="nx">التالي</button>`}
 else if(a==="nx")xGame();
 else if(a==="tg"){const s=SET();sv({[v]:!s[v]});rr()}
 else if(a==="th"){S.theme=v;save();applyChrome();rr()}else if(a==="lg"){S.lang=S.lang==="ar"?"en":"ar";save();applyChrome();render()}
 else if(a==="rs"){if(confirm("مسح كل البيانات المحفوظة؟")){Object.keys(localStorage).filter(k=>k.startsWith("dawa:")||k.startsWith("x:")).forEach(k=>localStorage.removeItem(k));location.reload()}}});
-main.addEventListener("input",e=>{const i=e.target.id;if(i==="x-fs"){sv({fs:+e.target.value});xApply()}else if(i==="x-qs"){sv({qs:+e.target.value});xApply()}else if(i==="x-an")xe("x-al",xAsmaList(e.target.value));else if(e.target.classList.contains("x-adj")){const s=SET(),a=s.adj.slice();a[+e.target.dataset.i]=+e.target.value||0;sv({adj:a})}});
-main.addEventListener("change",e=>{const i=e.target.id;if(i==="x-dh"){TS.i=+e.target.value;XS.s("tas",TS);xe("x-tas",xTas())}else if(i==="x-me")sv({meth:e.target.value});else if(i==="x-hj")sv({hij:+e.target.value})});
+main.addEventListener("input",e=>{const i=e.target.id;if(i==="sl-q")xSalSearch(e.target.value);else if(i&&i.indexOf("z-")===0&&e.target.type==="number"){if(i==="z-p24")PXS.m24=true;if(i==="z-ps")PXS.ms=true;xZakat(true)}if(i==="x-fs"){sv({fs:+e.target.value});xApply()}else if(i==="x-qs"){sv({qs:+e.target.value});xApply()}else if(i==="x-an")xe("x-al",xAsmaList(e.target.value));else if(e.target.classList.contains("x-adj")){const s=SET(),a=s.adj.slice();a[+e.target.dataset.i]=+e.target.value||0;sv({adj:a})}});
+main.addEventListener("change",e=>{const i=e.target.id;if(i==="x-dh"){TS.i=+e.target.value;XS.s("tas",TS);xe("x-tas",xTas())}else if(i==="x-me")sv({meth:e.target.value});else if(i==="z-cur"){XS.s("zcur",e.target.value);xPxInit()}else if(i==="z-ns"||i==="z-h")xZakat(true);else if(i==="x-hj")sv({hij:+e.target.value})});
 XF.forEach(f=>{const m={"عداد التسبيح":"tasbih","حاسبة الزكاة":"zakat","التقويم الهجري":"occ","مواعيد الأعياد":"occ","تكبير الخط":"settings","أسماء الله الحسنى":"asma","أحكام الحج والعمرة خطوة بخطوة":"hajj","بث مباشر للحرمين":"live","قسم الأطفال":"games","ألعاب تعليمية للقرآن":"games","قصص مصورة للأطفال":"games","قصص الأنبياء":"games","ثيمات ألوان":"settings","وضع الكبار: خط كبير":"settings","فلتر الروايات العشر":"tajweed"};if(m[f[0]])f[1]=m[f[0]];if(f[1]==="prayer")f[1]="salah"});
 XF.push(["الإعدادات: حجم الخط والمواقيت والمظهر","settings"]);
+/* ---------- suggestions & complaints -> WhatsApp ---------- */
+const WA="201208322633";
+const fbcss=document.createElement("style");fbcss.textContent=`.fb-btn{position:fixed;inset-inline-start:14px;bottom:84px;z-index:55;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:11px 16px;background:#25D366;color:#073B1A;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.fb-ov{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:grid;place-items:end center;padding:0}
+.fb-box{width:min(520px,100%);background:var(--surface);color:var(--fg);border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:10px;max-height:92vh;overflow:auto}
+@media(min-width:700px){.fb-ov{place-items:center;padding:20px}.fb-box{border-radius:20px}.fb-btn{bottom:24px}}`;document.head.appendChild(fbcss);
+function fbClose(){const o=document.getElementById("fb-ov");if(o)o.remove()}
+function fbOpen(){fbClose();const o=document.createElement("div");o.id="fb-ov";o.className="fb-ov";o.dir="rtl";
+o.innerHTML=`<div class="fb-box" role="dialog" aria-label="اقتراح أو شكوى"><div class="row sb"><b style="font-size:18px">💬 اقتراح أو شكوى</b><button class="chip" id="fb-x" type="button" aria-label="إغلاق">✕</button></div>
+<div class="row"><button class="chip" type="button" data-k="اقتراح" aria-pressed="true">💡 اقتراح</button><button class="chip" type="button" data-k="شكوى" aria-pressed="false">⚠️ شكوى</button></div>
+<input type="text" id="fb-n" placeholder="اسمك (اختياري)" maxlength="60"><textarea id="fb-m" placeholder="اكتب رسالتك هنا…" maxlength="1500"></textarea>
+<p class="muted sm" id="fb-e" style="margin:0" hidden>اكتب رسالتك أولًا.</p>
+<button class="btn" id="fb-s" type="button" style="background:#25D366;color:#073B1A">إرسال عبر واتساب</button>
+<p class="muted sm" style="margin:0">سيفتح واتساب برسالة جاهزة، اضغط «إرسال» فيه لتصل الرسالة.</p></div>`;
+document.body.appendChild(o);let k="اقتراح";
+o.addEventListener("click",e=>{if(e.target===o||e.target.id==="fb-x")return fbClose();const c=e.target.closest("[data-k]");if(c){k=c.dataset.k;o.querySelectorAll("[data-k]").forEach(x=>x.setAttribute("aria-pressed",x===c))}
+if(e.target.id==="fb-s"){const m=$("#fb-m").value.trim();if(!m){$("#fb-e").hidden=false;return}const n=$("#fb-n").value.trim();
+const txt=`*${k}* — منصة دعوة\n${n?"الاسم: "+n+"\n":""}\n${m}`;window.open("https://wa.me/"+WA+"?text="+encodeURIComponent(txt),"_blank","noopener");fbClose()}});
+setTimeout(()=>$("#fb-m").focus(),50)}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")fbClose()});
 xApply();
 
 applyChrome();render();
