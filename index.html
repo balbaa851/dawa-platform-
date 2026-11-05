@@ -424,8 +424,8 @@ V.prayer=()=>{
   <div class="times" id="times"></div>
   <div class="card" id="qcard" style="text-align:center"><h2 style="font-size:18px;margin-bottom:10px">${esc(L("Qibla direction","اتجاه القبلة"))}</h2>
    <svg class="compass" viewBox="0 0 200 200" role="img" aria-label="Qibla compass"><circle cx="100" cy="100" r="92" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="3"/>
-    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}
-     <g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 3"/><text x="100" y="36" text-anchor="middle" font-size="20">🕋</text></g></g>
+    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="15" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}
+     <g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="3" stroke-dasharray="5 3"/><text x="100" y="38" text-anchor="middle" font-size="28">🕋</text></g></g>
     <path d="M100 4 L109 20 L91 20 Z" fill="var(--primary-strong)"/><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
    <p class="muted sm" id="qinfo" style="margin:8px 0"></p>
    <button class="btn" data-act="qstart">${esc(L("Start live compass","تشغيل البوصلة المباشرة"))}</button>
@@ -799,7 +799,7 @@ const xcss2=document.createElement("style");xcss2.textContent=`
 .sl-p.next{opacity:1;border-color:var(--primary);background:linear-gradient(135deg,var(--tint),var(--surface));box-shadow:0 0 0 1.5px var(--primary)}
 .sl-p.next .ico{background:var(--primary);color:#fff}
 .sl-badge{position:absolute;top:-9px;inset-inline-end:12px;font-size:11px;font-weight:700;background:var(--primary-strong);color:#fff;border-radius:999px;padding:1px 10px}
-.sl-q{display:flex;align-items:center;gap:14px}
+.sl-q{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:20px 16px}.sl-q .grow{width:100%;justify-items:center}.sl-q .sl-deg{font-size:38px}.sl-q b{font-size:18px}.sl-q .btn.sm{padding:10px 22px;font-size:15px}
 .sl-deg{font-size:28px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
 .sl-deg small{font-size:13px;color:var(--muted);font-weight:500}
 .sl-pick{display:grid;gap:10px;border-color:var(--primary)}
@@ -817,7 +817,7 @@ const xcss2=document.createElement("style");xcss2.textContent=`
 .zk-nis b{color:var(--fg)}
 .zk-st{margin:0;font-size:12.5px;color:var(--muted);line-height:1.8}
 .zk-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--warn-bg);font-size:13px}
-@media (max-width:420px){.sl-cd{font-size:40px}.sl-next{font-size:30px}.sl-grid{grid-template-columns:1fr 1fr}.sl-p{flex-wrap:wrap;gap:8px}.sl-p .tm{width:100%}.sl-q{flex-direction:column;text-align:center}}
+@media (max-width:420px){.sl-cd{font-size:40px}.sl-next{font-size:30px}.sl-grid{grid-template-columns:1fr 1fr}.sl-p{flex-wrap:wrap;gap:8px}.sl-p .tm{width:100%}}
 `;document.head.appendChild(xcss2);
 /* ---------- prayer times (redesigned: hero + sun arc + cards, GPS first, manual fallback) ---------- */
 const PK=["fajr","sunrise","dhuhr","asr","maghrib","isha"],PA=["الفجر","الشروق","الظهر","العصر","المغرب","العشاء"],PE=["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"];
@@ -902,8 +902,8 @@ function xSalDraw(){
     <div class="sl-sr"><span>🌅 ${esc(L("Sunrise","الشروق"))} <b>${esc(rise.hm+" "+rise.ap)}</b></span><span><b>${esc(set.hm+" "+set.ap)}</b> ${esc(L("Sunset","الغروب"))} 🌇</span></div></div>
   </div>
   <div class="sl-grid">${X2.t.map((x,i)=>{const tm=slTm(x,tz);return `<div class="sl-p${i===1?" sun":""}" id="x-p${i}"><span class="ico">${pico(i)}</span><div class="grow"><div class="nm">${esc(S.lang==="ar"?PA[i]:PE[i])}</div>${i===1?`<div class="muted sm">${esc(L("Not a prayer","ليست صلاة"))}</div>`:""}</div><div class="tm" dir="ltr"><b>${esc(tm.hm)}</b><small>${esc(tm.ap)}</small></div><span class="sl-badge" id="sl-b${i}" hidden></span></div>`}).join("")}</div>
-  <div class="card sl-q" id="qcard"><svg viewBox="0 0 200 200" style="width:128px;flex:none" role="img" aria-label="Qibla compass"><circle cx="100" cy="100" r="92" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="3"/>
-    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}<g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 3"/><text x="100" y="36" text-anchor="middle" font-size="20">🕋</text></g></g><path d="M100 4 L109 20 L91 20 Z" fill="var(--primary-strong)"/><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
+  <div class="card sl-q" id="qcard"><svg viewBox="0 0 200 200" style="width:min(86vw,340px);height:auto;flex:none" role="img" aria-label="Qibla compass"><circle cx="100" cy="100" r="92" fill="var(--surface-2)" stroke="var(--primary)" stroke-width="3"/>
+    <g id="qdial" style="transition:transform .12s linear">${[["N",100,64],["E",144,105],["S",100,152],["W",56,105]].map(([l,x,y])=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="15" font-weight="700" fill="var(--muted)">${l}</text>`).join("")}<g id="qk" transform="rotate(0 100 100)"><path d="M100 100 L100 44" stroke="var(--gold)" stroke-width="3" stroke-dasharray="5 3"/><text x="100" y="38" text-anchor="middle" font-size="28">🕋</text></g></g><path d="M100 4 L109 20 L91 20 Z" fill="var(--primary-strong)"/><circle cx="100" cy="100" r="6" fill="var(--primary-strong)"/></svg>
     <div class="grow" style="display:grid;gap:6px"><b>${esc(L("Qibla direction","اتجاه القبلة"))}</b><div class="sl-deg">${Math.round(b)}°<small> ${esc(L("from North","من الشمال"))}</small></div><div class="muted sm">${esc(L("Distance to the Kaaba","المسافة إلى الكعبة"))}: ${km.toLocaleString(S.lang==="ar"?"ar-EG-u-nu-latn":"en-US")} ${esc(L("km","كم"))}</div><p class="muted sm" id="qinfo" style="margin:0"></p><div><button class="btn sm" data-act="qstart">🧭 ${esc(L("Start live compass","تشغيل البوصلة المباشرة"))}</button></div><p class="muted sm" id="qmsg" style="margin:0">${esc(L("Hold your phone flat; allow motion access when asked.","أمسك الهاتف أفقيًا واسمح بالحركة عند الطلب."))}</p></div></div>
   <p class="muted sm" style="margin:0">${esc(L("Source","المصدر"))}: ${esc(X2.show.src)} · ${esc(L("Method","الطريقة"))}: ${esc(MN[X2.show.m]||X2.show.m)}${o.mode==="gps"&&o.ac?` · ±${Math.round(o.ac)}${esc(L("m","م"))}`:""} · ${o.la.toFixed(3)}, ${o.ln.toFixed(3)}<br>${esc(L("Times may differ by a few minutes from your local mosque. Change the method, Asr school and minute adjustments in","قد تختلف الأوقات دقائق عن مسجدك. غيّر طريقة الحساب ومذهب العصر وتعديل الدقائق من"))} <a href="#settings">${esc(t("settings"))}</a>.</p>`);
   LQ.pos=[o.la,o.ln];qdraw();xSalTick();
