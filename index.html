@@ -819,6 +819,50 @@ const xcss2=document.createElement("style");xcss2.textContent=`
 .zk-warn{margin:0;padding:10px 12px;border-radius:10px;background:var(--warn-bg);font-size:13px}
 @media (max-width:420px){.sl-cd{font-size:40px}.sl-next{font-size:30px}.sl-grid{grid-template-columns:1fr 1fr}.sl-p{flex-wrap:wrap;gap:8px}.sl-p .tm{width:100%}}
 `;document.head.appendChild(xcss2);
+
+const uicss=document.createElement("style");uicss.textContent=`
+.ui-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:14px;min-width:0}
+.ui-h{display:flex;align-items:center;gap:12px}
+.ui-h .ib{width:40px;height:40px;border-radius:12px;background:var(--tint);color:var(--primary);display:grid;place-items:center;font-size:20px;font-weight:700;flex:none}
+.ui-h b{font-size:17px;display:block;line-height:1.3}
+.ui-h small{display:block;color:var(--muted);font-size:12.5px;line-height:1.5}
+.ui-sec{display:grid;gap:8px}
+.ui-sec>.st{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.2px}
+.ui-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ui-g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ui-f{display:grid;gap:5px;min-width:0}
+.ui-f>span{font-size:13px;color:var(--muted);line-height:1.4}
+.ui-in{display:flex;align-items:center;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:0 12px;transition:border-color .15s,box-shadow .15s}
+.ui-in:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--tint)}
+.ui-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;outline:0;padding:11px 0;font-size:16px;font-variant-numeric:tabular-nums}
+.ui-in em{font-style:normal;font-size:12px;color:var(--muted);margin-inline-start:6px;white-space:nowrap}
+.ui-sel{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;font-size:15px}
+.ui-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface-2)}
+.ui-seg button{border:0;background:transparent;border-radius:10px;padding:9px 8px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);line-height:1.35}
+.ui-seg button[aria-pressed="true"]{background:var(--surface);color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.ui-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:14px;background:var(--surface-2);cursor:pointer;text-align:start;border:0;width:100%;font-weight:600;font-size:14.5px}
+.ui-row small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.ui-sw{position:relative;width:46px;height:27px;border-radius:99px;background:var(--line);flex:none;transition:background .2s}
+.ui-sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:inset-inline-start .2s}
+.ui-row[aria-pressed="true"] .ui-sw,.ui-row:has(input:checked) .ui-sw{background:var(--primary)}
+.ui-row[aria-pressed="true"] .ui-sw::after,.ui-row:has(input:checked) .ui-sw::after{inset-inline-start:22px}
+.ui-row input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+.ui-go{width:100%;border:0;border-radius:14px;padding:14px;font-size:16px;font-weight:700;background:var(--primary-strong);color:var(--on-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.ui-go:hover{filter:brightness(1.1)}
+.ui-go.wa{background:#25D366;color:#073B1A}
+.ui-go.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.ui-go.soft{background:var(--tint);color:var(--primary)}
+.ui-note{margin:0;font-size:12.5px;color:var(--muted);line-height:1.8}
+.ui-sw3{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ui-th{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:10px;display:grid;gap:8px;justify-items:center;cursor:pointer;font-weight:600;font-size:14px}
+.ui-th i{display:block;width:100%;height:34px;border-radius:9px;border:1px solid rgba(128,128,128,.3)}
+.ui-th[aria-pressed="true"]{border-color:var(--primary);background:var(--tint);color:var(--primary)}
+.ui-rng{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.ui-rng input{width:100%;accent-color:var(--primary)}
+.ui-pv{padding:12px;border-radius:12px;background:var(--surface-2);text-align:center}
+.ui-res .card.flat{border-radius:14px;padding:14px}
+.zk-px .btn.ghost.sm{border-radius:12px;padding:8px 14px}
+`;document.head.appendChild(uicss);
 /* ---------- prayer times (redesigned: hero + sun arc + cards, GPS first, manual fallback) ---------- */
 const PK=["fajr","sunrise","dhuhr","asr","maghrib","isha"],PA=["الفجر","الشروق","الظهر","العصر","المغرب","العشاء"],PE=["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"];
 const X2={iv:0,loc:null,pick:false,pmsg:"",res:[],t:null,tm:null,seq:0,d:0,tz:"UTC",done:true,wd:0};
@@ -979,13 +1023,25 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&$("#z-pxb
 
 /* ---------- zakat ---------- */
 const nf=v=>(+v||0).toLocaleString("en-US",{maximumFractionDigits:2});
-V.zakat=()=>{setTimeout(()=>xPxInit(false));const f=(id,l,ph)=>`<label class="sm muted">${esc(l)}<input type="number" inputmode="decimal" id="${id}" placeholder="${ph||0}" min="0"></label>`,cur=pxCur();
+V.zakat=()=>{setTimeout(()=>xPxInit(false));
+const cur=pxCur(),F=(id,l,u)=>`<label class="ui-f"><span>${esc(l)}</span><div class="ui-in"><input type="number" inputmode="decimal" id="${id}" placeholder="0" min="0"><em>${esc(u)}</em></div></label>`,H=(n,ti,sub)=>`<div class="ui-h"><span class="ib">${n}</span><div><b>${ti}</b>${sub?`<small>${sub}</small>`:""}</div></div>`;
 return head(t("zakat"),L("Money, gold, silver, trade goods, crops and livestock","النقود والذهب والفضة وعروض التجارة والزروع والأنعام"))+`
 <div class="card zk-px" id="z-px"><div class="row sb"><b>💰 أسعار الذهب والفضة اليوم</b><select id="z-cur" aria-label="العملة" style="width:auto">${ZC.map(([c,n])=>`<option value="${c}" ${c===cur?"selected":""}>${c} — ${n}</option>`).join("")}</select></div><div id="z-pxb"></div><div class="row"><button class="btn ghost sm" data-y="zpx">🔄 تحديث الأسعار الآن</button></div></div>
-<div class="card" style="display:grid;gap:8px"><b>١) زكاة المال</b><p class="muted sm" style="margin:0">السعران يُملآن تلقائيًا من أسعار اليوم، ويمكنك تعديلهما.</p>${f("z-p24","سعر جرام الذهب عيار 24 اليوم (تلقائي)")}${f("z-ps","سعر جرام الفضة اليوم (تلقائي)")}${f("z-g24","ذهب عيار 24 (جرام)")}${f("z-g21","ذهب عيار 21 (جرام)")}${f("z-g18","ذهب عيار 18 (جرام)")}${f("z-sv","فضة (جرام)")}${f("z-cash","النقد في اليد والبنك والاستثمارات")}${f("z-tr","قيمة عروض التجارة (البضاعة + الأرباح)")}${f("z-rc","ديون مرجوّة السداد لك")}${f("z-db","ديون حالّة عليك")}<label class="sm muted">النصاب<select id="z-ns"><option value="g">الذهب (85 جم عيار 24)</option><option value="s">الفضة (595 جم)</option></select></label><label class="sm muted"><input type="checkbox" id="z-h" checked style="width:auto"> تم مرور سنة هجرية كاملة على المال</label><button class="btn" data-y="zk">احسب</button><div id="z-out"></div></div>
-<div class="card" style="display:grid;gap:8px"><b>٢) زكاة الزروع والثمار</b>${f("c-kg","المحصول بالكيلو جرام")}<label class="sm muted">السقي<select id="c-ty"><option value="10">بماء المطر والأنهار (10%)</option><option value="5">بآلة وتكلفة (5%)</option><option value="7.5">مشترك (7.5%)</option></select></label><button class="btn" data-y="zc">احسب</button><div id="c-out"></div></div>
-<div class="card" style="display:grid;gap:8px"><b>٣) زكاة الأنعام (السائمة)</b><label class="sm muted">النوع<select id="a-ty"><option value="sheep">غنم وماعز</option><option value="cow">بقر وجاموس</option><option value="camel">إبل</option></select></label>${f("a-n","العدد")}<button class="btn" data-y="za">احسب</button><div id="a-out"></div></div>
-<div class="card"><b>شروط وأحكام</b><p style="line-height:1.9;margin:6px 0 0">شروط وجوبها: الإسلام، والحرية، وملك النصاب ملكًا تامًا، وفضله عن الحوائج الأصلية، وحولان الحول (سنة هجرية) إلا الزروع فتجب عند الحصاد. نصاب الذهب 85 جرامًا من عيار 24، ونصاب الفضة 595 جرامًا، والواجب ربع العشر (2.5%). يُضم الذهب والفضة والنقد وعروض التجارة بعضها إلى بعض، وتُخصم الديون الحالّة. لا زكاة في بيتك الذي تسكنه ولا سيارتك الخاصة ولا ثيابك ولا أثاثك. المال المرصود للادخار وعروض التجارة تجب فيها الزكاة بقيمتها يوم الإخراج. المستحقون ثمانية: الفقراء والمساكين والعاملون عليها والمؤلفة قلوبهم وفي الرقاب والغارمون وفي سبيل الله وابن السبيل. ولا تُعطى لأصولك ولا فروعك ولا زوجتك. العلماء مختلفون في النصاب المعتمد (الذهب أم الفضة)، والأحوط للفقراء الفضة، ودور الإفتاء تُعلن النصاب المعتمد كل فترة فراجعها.</p></div>`};
+<div class="ui-card">${H("١","زكاة المال","السعران يُملآن تلقائيًا من أسعار اليوم، ويمكنك تعديلهما")}
+<div class="ui-sec"><span class="st">سعر الجرام اليوم</span><div class="ui-g2">${F("z-p24","ذهب عيار 24",cur)}${F("z-ps","فضة",cur)}</div></div>
+<div class="ui-sec"><span class="st">ما تملكه من ذهب وفضة</span><div class="ui-g2">${F("z-g24","ذهب عيار 24","جم")}${F("z-g21","ذهب عيار 21","جم")}${F("z-g18","ذهب عيار 18","جم")}${F("z-sv","فضة","جم")}</div></div>
+<div class="ui-sec"><span class="st">النقود والتجارة</span><div class="ui-g2">${F("z-cash","النقد والبنك والاستثمارات",cur)}${F("z-tr","عروض التجارة (بضاعة + أرباح)",cur)}</div></div>
+<div class="ui-sec"><span class="st">الديون</span><div class="ui-g2">${F("z-rc","ديون مرجوّة السداد لك",cur)}${F("z-db","ديون حالّة عليك",cur)}</div></div>
+<div class="ui-sec"><span class="st">النصاب المعتمد</span><select id="z-ns" hidden><option value="g">g</option><option value="s">s</option></select><div class="ui-seg" id="z-nsg"><button type="button" data-y="zns" data-v="g" aria-pressed="true">الذهب · 85 جم</button><button type="button" data-y="zns" data-v="s" aria-pressed="false">الفضة · 595 جم</button></div></div>
+<label class="ui-row"><span>مرّت سنة هجرية كاملة على المال<small>شرط وجوب الزكاة (الحول)</small></span><input type="checkbox" id="z-h" checked><span class="ui-sw"></span></label>
+<button class="ui-go" data-y="zk">🧮 احسب الزكاة</button><div id="z-out" class="ui-res"></div></div>
+<div class="ui-card">${H("٢","زكاة الزروع والثمار","تجب عند الحصاد")}
+<div class="ui-g2">${F("c-kg","المحصول","كجم")}<label class="ui-f"><span>طريقة السقي</span><select id="c-ty" class="ui-sel"><option value="10">مطر وأنهار (10%)</option><option value="5">آلة وتكلفة (5%)</option><option value="7.5">مشترك (7.5%)</option></select></label></div>
+<button class="ui-go soft" data-y="zc">🧮 احسب</button><div id="c-out" class="ui-res"></div></div>
+<div class="ui-card">${H("٣","زكاة الأنعام (السائمة)","الغنم والبقر والإبل")}
+<div class="ui-g2"><label class="ui-f"><span>النوع</span><select id="a-ty" class="ui-sel"><option value="sheep">غنم وماعز</option><option value="cow">بقر وجاموس</option><option value="camel">إبل</option></select></label>${F("a-n","العدد","رأس")}</div>
+<button class="ui-go soft" data-y="za">🧮 احسب</button><div id="a-out" class="ui-res"></div></div>
+<div class="ui-card">${H("📖","شروط وأحكام","")}<p style="line-height:1.95;margin:0;font-size:14px">شروط وجوبها: الإسلام، والحرية، وملك النصاب ملكًا تامًا، وفضله عن الحوائج الأصلية، وحولان الحول (سنة هجرية) إلا الزروع فتجب عند الحصاد. نصاب الذهب 85 جرامًا من عيار 24، ونصاب الفضة 595 جرامًا، والواجب ربع العشر (2.5%). يُضم الذهب والفضة والنقد وعروض التجارة بعضها إلى بعض، وتُخصم الديون الحالّة. لا زكاة في بيتك الذي تسكنه ولا سيارتك الخاصة ولا ثيابك ولا أثاثك. المال المرصود للادخار وعروض التجارة تجب فيها الزكاة بقيمتها يوم الإخراج. المستحقون ثمانية: الفقراء والمساكين والعاملون عليها والمؤلفة قلوبهم وفي الرقاب والغارمون وفي سبيل الله وابن السبيل. ولا تُعطى لأصولك ولا فروعك ولا زوجتك. العلماء مختلفون في النصاب المعتمد (الذهب أم الفضة)، والأحوط للفقراء الفضة، ودور الإفتاء تُعلن النصاب المعتمد كل فترة فراجعها.</p></div>`};
 function xZakat(live){const v=id=>+($("#"+id).value)||0,p24=v("z-p24"),ps=v("z-ps"),gold=v("z-g24")+v("z-g21")*21/24+v("z-g18")*18/24,out=$("#z-out");if(!out)return;
 const w=gold*p24+v("z-sv")*ps+v("z-cash")+v("z-tr")+v("z-rc")-v("z-db"),ns=$("#z-ns").value==="g"?85*p24:595*ps,cur=pxCur();
 if(live&&!(v("z-g24")||v("z-g21")||v("z-g18")||v("z-sv")||v("z-cash")||v("z-tr")||v("z-rc")||v("z-db"))){out.innerHTML="";return}
@@ -1039,12 +1095,23 @@ async function xGame(){if(!$("#x-g"))return;GM.done=false;const my=++GM.seq;
     GM.q=q;xe("x-g",`<div class="card"><p class="muted sm">${esc(L("Score","النقاط"))}: ${GM.sc} / ${GM.n}</p><p class="${q.ar?"xq":""}" style="font-size:${q.ar?"":"18px"};font-weight:${q.ar?"400":"700"}">${esc(q.t)}</p>${q.o.map((o,i)=>`<button class="btn ghost opt" data-y="ans" data-v="${i}">${esc(o)}</button>`).join("")}<div id="x-gn"></div></div>`)}
   catch(e){xerr("x-g",e.message)}}
 /* ---------- settings ---------- */
-V.settings=()=>{const s=SET(),sw=(k,l)=>`<button class="chip" data-y="tg" data-v="${k}" aria-pressed="${!!s[k]}">${esc(l)}</button>`;
-return head(t("settings"),"")+`<div class="card" style="display:grid;gap:10px"><b>حجم الخط</b><input type="range" id="x-fs" min="0.85" max="1.5" step="0.05" value="${s.fs}"><b>حجم خط القرآن</b><input type="range" id="x-qs" min="0.8" max="2" step="0.1" value="${s.qs}"><p class="ar" style="font-size:22px;margin:0">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p></div>
-<div class="card" style="display:grid;gap:10px"><b>الشكل</b><div class="row">${[["auto","تلقائي"],["light","فاتح"],["dark","داكن"],["emerald","زمردي"]].map(([k,v])=>`<button class="chip" data-y="th" data-v="${k}" aria-pressed="${S.theme===k}">${v}</button>`).join("")}<button class="chip" data-y="lg">${S.lang==="ar"?"English":"العربية"}</button></div></div>
-<div class="card" style="display:grid;gap:10px"><b>الصلاة</b><label class="sm muted">طريقة الحساب<select id="x-me">${[["auto","تلقائي حسب بلدك"],["5","الهيئة المصرية"],["4","أم القرى"],["3","رابطة العالم الإسلامي"],["2","أمريكا الشمالية"],["13","تركيا (ديانت)"],["1","كراتشي"]].map(([k,v])=>`<option value="${k}" ${String(s.meth)===k?"selected":""}>${v}</option>`).join("")}</select></label><div class="row">${sw("hanafi","العصر بمذهب الحنفية")}${sw("h24","نظام 24 ساعة")}</div><span class="sm muted">تعديل الدقائق لكل صلاة (احتياطًا أو تمشيًا مع مسجدك)</span><div class="row">${PA.map((n,i)=>`<label class="sm">${n}<input type="number" class="x-adj" data-i="${i}" value="${s.adj[i]}" style="width:70px"></label>`).join("")}</div><label class="sm muted">تعديل التاريخ الهجري (يوم)<select id="x-hj">${[-1,0,1].map(v=>`<option ${s.hij===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
-<div class="card" style="display:grid;gap:10px"><b>💬 الاقتراحات والشكاوى</b><span class="sm muted">أرسل اقتراحك أو شكواك مباشرة عبر واتساب.</span><button class="btn" data-y="fb" style="background:#25D366;color:#073B1A">إرسال اقتراح / شكوى</button></div>
-<div class="card" style="display:grid;gap:10px"><b>أخرى</b><div class="row">${sw("vib","اهتزاز السبحة")}</div><button class="btn ghost" data-y="rs">مسح كل البيانات المحفوظة</button></div>`};
+V.settings=()=>{const s=SET(),H=(ic,ti,sub)=>`<div class="ui-h"><span class="ib">${ic}</span><div><b>${ti}</b>${sub?`<small>${sub}</small>`:""}</div></div>`,
+sw=(k,l,sub)=>`<button type="button" class="ui-row" data-y="tg" data-v="${k}" aria-pressed="${!!s[k]}"><span>${esc(l)}${sub?`<small>${sub}</small>`:""}</span><span class="ui-sw"></span></button>`,
+TH=[["auto","تلقائي","linear-gradient(90deg,#F9FAFB 50%,#0B1120 50%)"],["light","فاتح","#F9FAFB"],["dark","داكن","#0B1120"],["emerald","زمردي","linear-gradient(90deg,#04241C,#34D399)"]];
+return head(t("settings"),"")+`<div class="ui-card">${H("Aa","حجم الخط","يؤثر على نصوص التطبيق وخط القرآن")}
+<div class="ui-sec"><span class="st">خط التطبيق</span><div class="ui-rng"><span style="font-size:13px">أ</span><input type="range" id="x-fs" min="0.85" max="1.5" step="0.05" value="${s.fs}"><span style="font-size:22px">أ</span></div></div>
+<div class="ui-sec"><span class="st">خط القرآن</span><div class="ui-rng"><span style="font-size:13px">أ</span><input type="range" id="x-qs" min="0.8" max="2" step="0.1" value="${s.qs}"><span style="font-size:22px">أ</span></div></div>
+<div class="ui-pv"><p class="ar" style="font-size:22px;margin:0">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p></div></div>
+<div class="ui-card">${H("🎨","الشكل واللغة","")}
+<div class="ui-sw3">${TH.map(([k,v,bg])=>`<button type="button" class="ui-th" data-y="th" data-v="${k}" aria-pressed="${S.theme===k}"><i style="background:${bg}"></i>${v}</button>`).join("")}</div>
+<button type="button" class="ui-row" data-y="lg"><span>اللغة<small>${S.lang==="ar"?"العربية الآن — اضغط للتحويل":"English now — tap to switch"}</small></span><b style="color:var(--primary)">${S.lang==="ar"?"English":"العربية"}</b></button></div>
+<div class="ui-card">${H("🕌","الصلاة","طريقة الحساب والتعديلات")}
+<label class="ui-f"><span>طريقة الحساب</span><select id="x-me" class="ui-sel">${[["auto","تلقائي حسب بلدك"],["5","الهيئة المصرية"],["4","أم القرى"],["3","رابطة العالم الإسلامي"],["2","أمريكا الشمالية"],["13","تركيا (ديانت)"],["1","كراتشي"]].map(([k,v])=>`<option value="${k}" ${String(s.meth)===k?"selected":""}>${v}</option>`).join("")}</select></label>
+${sw("hanafi","العصر بمذهب الحنفية","ظل المثل مرتين")}${sw("h24","نظام 24 ساعة","بدل ص / م")}
+<div class="ui-sec"><span class="st">تعديل الدقائق لكل صلاة (احتياطًا أو تمشيًا مع مسجدك)</span><div class="ui-g3">${PA.map((n,i)=>`<label class="ui-f"><span>${n}</span><div class="ui-in"><input type="number" class="x-adj" data-i="${i}" value="${s.adj[i]}"><em>د</em></div></label>`).join("")}</div></div>
+<label class="ui-f"><span>تعديل التاريخ الهجري (يوم)</span><select id="x-hj" class="ui-sel">${[-1,0,1].map(v=>`<option ${s.hij===v?"selected":""}>${v}</option>`).join("")}</select></label></div>
+<div class="ui-card">${H("💬","الاقتراحات والشكاوى","أرسل رأيك مباشرة عبر واتساب")}<button class="ui-go wa" data-y="fb">إرسال اقتراح / شكوى</button></div>
+<div class="ui-card">${H("⚙️","أخرى","")}${sw("vib","اهتزاز السبحة","عند كل تسبيحة")}<button class="ui-go danger" data-y="rs">🗑 مسح كل البيانات المحفوظة</button></div>`};
 /* ---------- events ---------- */
 const sv=o=>XS.s("set",Object.assign(SET(),o));
 main.addEventListener("click",e=>{const b=e.target.closest("[data-y]");if(!b)return;const a=b.dataset.y,v=b.dataset.v;
@@ -1054,6 +1121,7 @@ else if(a==="lcl"){X2.pick=false;if(X2.t)xSalDraw()}
 else if(a==="city"){const c=SLC[+v];xSalSet({la:c[2],ln:c[3],tz:c[4],name:slN(c)})}
 else if(a==="pick"){const r=X2.res[+v];if(r)xSalSet({la:r.latitude,ln:r.longitude,tz:r.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone,name:r.name})}
 else if(a==="fb"){fbOpen()}
+else if(a==="zns"){$("#z-ns").value=v;document.querySelectorAll("#z-nsg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v));xZakat(true)}
 else if(a==="zpx"){PXS.m24=PXS.ms=false;xPxInit(true)}
 else if(a==="tap"){TS.n++;TS.tot++;if(SET().vib&&navigator.vibrate)navigator.vibrate(TS.n%TS.goal===0?[60,40,60]:12);XS.s("tas",TS);xe("x-tas",xTas())}
 else if(a==="tre"){TS.n=0;XS.s("tas",TS);xe("x-tas",xTas())}
