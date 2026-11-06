@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>منصة دعوة</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -121,7 +121,7 @@ textarea{resize:vertical;min-height:76px}
 
 /* vertical-only scrolling, like a social feed */
 html,body{max-width:100%;overflow-x:clip;overscroll-behavior-x:none}
-body{touch-action:pan-y pinch-zoom}
+body{touch-action:pan-y}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}input,select,textarea{font-size:16px!important}
 .shell,.col,main,main>*{min-width:0;max-width:100%}
 main>*,.card,.row>*{overflow-wrap:anywhere}
 .row{max-width:100%}
@@ -1740,6 +1740,7 @@ NAV.unshift(["extras","spark"]);
 xApply();
 
 applyChrome();render();
+document.addEventListener("gesturestart",e=>e.preventDefault());
 })();
 </script>
 
